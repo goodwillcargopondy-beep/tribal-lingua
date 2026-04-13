@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, MessageSquare, Type } from "lucide-react";
+import { ArrowLeft, MessageSquare, Type } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { languages, categories } from "@/data/languages";
 
@@ -29,7 +29,6 @@ const LearnLanguage = () => {
 
       <main className="mx-auto max-w-lg px-5 -mt-6 space-y-4">
         {[
-          { icon: BookOpen, title: "Common Words", desc: "Essential vocabulary", path: `/learn/${language}/words` },
           { icon: MessageSquare, title: "Common Sentences", desc: "Everyday phrases", path: `/learn/${language}/sentences` },
           { icon: Type, title: "Letters & Alphabets", desc: "Script and writing", path: `/learn/${language}/letters` },
         ].map((item, i) => (
@@ -56,7 +55,7 @@ const LearnLanguage = () => {
               key={cat.id}
               onClick={() => navigate(`/learn/${language}/words/${cat.id}`)}
               className="flex flex-col items-center gap-2 rounded-xl bg-card p-5 card-shadow transition-transform hover:scale-[1.02] active:scale-[0.98] animate-fade-in-up"
-              style={{ animationDelay: `${(i + 3) * 0.05}s` }}
+              style={{ animationDelay: `${(i + 2) * 0.05}s` }}
             >
               <span className="text-3xl">{cat.icon}</span>
               <span className="font-heading text-sm font-semibold text-foreground">{cat.name}</span>

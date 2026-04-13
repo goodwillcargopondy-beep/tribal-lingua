@@ -1,15 +1,16 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Flame, Star, ArrowRight } from "lucide-react";
+import { BookOpen, ArrowRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import DailyWordCard from "@/components/DailyWordCard";
 import { languages } from "@/data/languages";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen pb-24 tribal-pattern-bg">
-      {/* Header */}
       <header className="tribal-gradient px-5 pb-8 pt-12 text-primary-foreground">
         <div className="mx-auto max-w-lg">
           <div className="flex items-center justify-between">
@@ -17,19 +18,21 @@ const Index = () => {
               <p className="font-body text-sm opacity-80">Welcome back 👋</p>
               <h1 className="font-heading text-2xl font-bold">Tribal Lingua</h1>
             </div>
-            <div className="flex items-center gap-2 rounded-full bg-secondary/20 px-3 py-1.5">
-              <Flame className="h-4 w-4 text-secondary" />
-              <span className="text-sm font-heading font-semibold">3</span>
-            </div>
+            {!user && (
+              <button
+                onClick={() => navigate("/auth")}
+                className="rounded-full bg-secondary/20 px-4 py-1.5 text-sm font-body font-medium"
+              >
+                Sign In
+              </button>
+            )}
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-lg px-5 -mt-4 space-y-5">
-        {/* Daily Word */}
         <DailyWordCard />
 
-        {/* Resume Learning */}
         <button
           onClick={() => navigate("/learn")}
           className="flex w-full items-center gap-4 rounded-lg bg-card p-5 card-shadow transition-transform hover:scale-[1.01] active:scale-[0.99] animate-fade-in-up"
@@ -45,23 +48,7 @@ const Index = () => {
           <ArrowRight className="h-5 w-5 text-muted-foreground" />
         </button>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-          {[
-            { label: "Words", value: "24", icon: "📝" },
-            { label: "Streak", value: "3 days", icon: "🔥" },
-            { label: "XP", value: "180", icon: "⭐" },
-          ].map((stat) => (
-            <div key={stat.label} className="rounded-lg bg-card p-4 text-center card-shadow">
-              <p className="text-xl">{stat.icon}</p>
-              <p className="mt-1 font-heading text-lg font-bold text-foreground">{stat.value}</p>
-              <p className="text-xs font-body text-muted-foreground">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Languages Preview */}
-        <div className="animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+        <div className="animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-heading text-lg font-semibold text-foreground">Explore Languages</h2>
             <button onClick={() => navigate("/learn")} className="text-sm font-body font-medium text-secondary">
@@ -79,10 +66,6 @@ const Index = () => {
                 <div className="flex-1 text-left">
                   <h3 className="font-heading text-sm font-semibold text-foreground">{lang.name}</h3>
                   <p className="text-xs font-body text-muted-foreground">{lang.region}</p>
-                </div>
-                <div className="flex items-center gap-1 text-xs font-body text-muted-foreground">
-                  <Star className="h-3 w-3 text-gold" />
-                  {lang.speakers}
                 </div>
               </button>
             ))}
