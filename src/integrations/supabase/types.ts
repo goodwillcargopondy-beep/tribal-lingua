@@ -14,7 +14,141 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_activity: {
+        Row: {
+          activity_date: string
+          id: string
+          quizzes_completed: number
+          user_id: string
+          words_learned: number
+          xp_earned: number
+        }
+        Insert: {
+          activity_date?: string
+          id?: string
+          quizzes_completed?: number
+          user_id: string
+          words_learned?: number
+          xp_earned?: number
+        }
+        Update: {
+          activity_date?: string
+          id?: string
+          quizzes_completed?: number
+          user_id?: string
+          words_learned?: number
+          xp_earned?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          current_streak: number
+          display_name: string | null
+          id: string
+          last_activity_date: string | null
+          level: number
+          longest_streak: number
+          quizzes_completed: number
+          stories_read: number
+          updated_at: string
+          user_id: string
+          words_learned: number
+          xp: number
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          current_streak?: number
+          display_name?: string | null
+          id?: string
+          last_activity_date?: string | null
+          level?: number
+          longest_streak?: number
+          quizzes_completed?: number
+          stories_read?: number
+          updated_at?: string
+          user_id: string
+          words_learned?: number
+          xp?: number
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          current_streak?: number
+          display_name?: string | null
+          id?: string
+          last_activity_date?: string | null
+          level?: number
+          longest_streak?: number
+          quizzes_completed?: number
+          stories_read?: number
+          updated_at?: string
+          user_id?: string
+          words_learned?: number
+          xp?: number
+        }
+        Relationships: []
+      }
+      quiz_results: {
+        Row: {
+          created_at: string
+          difficulty: string
+          id: string
+          language: string
+          quiz_type: string
+          score: number
+          total_questions: number
+          user_id: string
+          xp_earned: number
+        }
+        Insert: {
+          created_at?: string
+          difficulty: string
+          id?: string
+          language: string
+          quiz_type: string
+          score: number
+          total_questions: number
+          user_id: string
+          xp_earned?: number
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string
+          id?: string
+          language?: string
+          quiz_type?: string
+          score?: number
+          total_questions?: number
+          user_id?: string
+          xp_earned?: number
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
