@@ -7,8 +7,13 @@ import Index from "./pages/Index";
 import Learn from "./pages/Learn";
 import LearnLanguage from "./pages/LearnLanguage";
 import LearnWords from "./pages/LearnWords";
+import LearnLetters from "./pages/LearnLetters";
+import LearnSentences from "./pages/LearnSentences";
 import FolkVault from "./pages/FolkVault";
+import FolkVaultLanguage from "./pages/FolkVaultLanguage";
+import StoryReader from "./pages/StoryReader";
 import Quiz from "./pages/Quiz";
+import QuizLanguage from "./pages/QuizLanguage";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -26,8 +31,13 @@ const App = () => (
           <Route path="/learn/:language" element={<LearnLanguage />} />
           <Route path="/learn/:language/words" element={<LearnWords />} />
           <Route path="/learn/:language/words/:category" element={<LearnWords />} />
+          <Route path="/learn/:language/letters" element={<LearnLetters />} />
+          <Route path="/learn/:language/sentences" element={<LearnSentences />} />
           <Route path="/folkvault" element={<FolkVault />} />
+          <Route path="/folkvault/:language" element={<FolkVaultLanguage />} />
+          <Route path="/folkvault/:language/:storyId" element={<StoryReader />} />
           <Route path="/quiz" element={<Quiz />} />
+          <Route path="/quiz/:language" element={<QuizLanguage />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

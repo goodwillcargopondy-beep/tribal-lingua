@@ -1,7 +1,8 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Volume2 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
-import { languages, categories, sampleWords } from "@/data/languages";
+import { languages, categories } from "@/data/languages";
+import { allWords } from "@/data/allWords";
 
 const LearnWords = () => {
   const { language, category } = useParams<{ language: string; category?: string }>();
@@ -9,8 +10,8 @@ const LearnWords = () => {
   const lang = languages.find((l) => l.id === language);
   const cat = category ? categories.find((c) => c.id === category) : null;
 
-  const key = `${language}-${category || "animals"}`;
-  const words = sampleWords[key] || [];
+  const langWords = allWords[language || ""] || {};
+  const words = langWords[category || "animals"] || [];
 
   const handleSpeak = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -47,7 +48,7 @@ const LearnWords = () => {
               <div
                 key={word.id}
                 className="group rounded-xl bg-card p-4 card-shadow transition-transform hover:scale-[1.02] animate-fade-in-up"
-                style={{ animationDelay: `${i * 0.05}s` }}
+                style={{ animationDelay: `${i * 0.03}s` }}
               >
                 <div className="text-center">
                   <span className="text-4xl">{word.image}</span>

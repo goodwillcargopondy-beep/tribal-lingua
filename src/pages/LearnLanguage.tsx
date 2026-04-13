@@ -28,15 +28,14 @@ const LearnLanguage = () => {
       </header>
 
       <main className="mx-auto max-w-lg px-5 -mt-6 space-y-4">
-        {/* Main Learning Paths */}
         {[
-          { icon: BookOpen, title: "Common Words", desc: "Essential vocabulary", path: "words" },
-          { icon: MessageSquare, title: "Common Sentences", desc: "Everyday phrases", path: "sentences" },
-          { icon: Type, title: "Letters & Alphabets", desc: "Script and writing", path: "letters" },
+          { icon: BookOpen, title: "Common Words", desc: "Essential vocabulary", path: `/learn/${language}/words` },
+          { icon: MessageSquare, title: "Common Sentences", desc: "Everyday phrases", path: `/learn/${language}/sentences` },
+          { icon: Type, title: "Letters & Alphabets", desc: "Script and writing", path: `/learn/${language}/letters` },
         ].map((item, i) => (
           <button
             key={item.path}
-            onClick={() => item.path === "words" ? navigate(`/learn/${language}/words`) : null}
+            onClick={() => navigate(item.path)}
             className="flex w-full items-center gap-4 rounded-xl bg-card p-5 card-shadow transition-transform hover:scale-[1.01] active:scale-[0.99] animate-fade-in-up"
             style={{ animationDelay: `${i * 0.1}s` }}
           >
@@ -50,7 +49,6 @@ const LearnLanguage = () => {
           </button>
         ))}
 
-        {/* Word Categories */}
         <h2 className="font-heading text-lg font-semibold text-foreground pt-2">Word Categories</h2>
         <div className="grid grid-cols-2 gap-3">
           {categories.map((cat, i) => (

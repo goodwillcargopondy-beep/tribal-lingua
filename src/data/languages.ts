@@ -54,6 +54,15 @@ export const categories = [
   { id: "nature", name: "Nature", icon: "🌳", color: "earth" },
   { id: "greetings", name: "Greetings", icon: "🙏", color: "terracotta" },
   { id: "numbers", name: "Numbers", icon: "🔢", color: "forest" },
+  { id: "colors", name: "Colors", icon: "🎨", color: "gold" },
+  { id: "body", name: "Body Parts", icon: "🦴", color: "earth" },
+  { id: "clothing", name: "Clothing", icon: "👗", color: "terracotta" },
+  { id: "weather", name: "Weather", icon: "🌤️", color: "forest" },
+  { id: "tools", name: "Tools", icon: "🔧", color: "gold" },
+  { id: "music", name: "Music", icon: "🎵", color: "earth" },
+  { id: "home", name: "Home", icon: "🏠", color: "terracotta" },
+  { id: "village", name: "Village", icon: "🏘️", color: "forest" },
+  { id: "festivals", name: "Festivals", icon: "🎉", color: "gold" },
 ];
 
 export const sampleWords: Record<string, Word[]> = {
