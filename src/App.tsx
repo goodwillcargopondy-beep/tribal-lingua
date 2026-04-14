@@ -20,6 +20,7 @@ import History from "./pages/History";
 import HistoryLanguage from "./pages/HistoryLanguage";
 import HistoryTopic from "./pages/HistoryTopic";
 import Profile from "./pages/Profile";
+import ClanFinder from "./pages/ClanFinder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
