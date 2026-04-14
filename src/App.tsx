@@ -20,6 +20,7 @@ import History from "./pages/History";
 import HistoryLanguage from "./pages/HistoryLanguage";
 import HistoryTopic from "./pages/HistoryTopic";
 import Profile from "./pages/Profile";
+import ClanFinder from "./pages/ClanFinder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/history" element={<History />} />
             <Route path="/history/:language" element={<HistoryLanguage />} />
             <Route path="/history/:language/:topic" element={<HistoryTopic />} />
+            <Route path="/clan" element={<ClanFinder />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
