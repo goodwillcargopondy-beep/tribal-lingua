@@ -49,6 +49,7 @@ const App = () => (
             <Route path="/history" element={<History />} />
             <Route path="/history/:language" element={<HistoryLanguage />} />
             <Route path="/history/:language/:topic" element={<HistoryTopic />} />
+            <Route path="/clan" element={<ClanFinder />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
