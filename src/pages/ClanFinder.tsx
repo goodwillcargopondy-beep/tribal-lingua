@@ -1,10 +1,26 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Sparkles, ChevronRight, Lock, Unlock } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { ritualQuestions, clans, ClanInfo } from "@/data/clanData";
+import { useLearnedItems } from "@/hooks/useLearnedItems";
+import { categories } from "@/data/languages";
+import { allWords } from "@/data/allWords";
+import { santhaliSentences, gondiSentences, kurukhSentences } from "@/data/sentences";
+import { santhaliAlphabets, gondiAlphabets, kurukhAlphabets } from "@/data/alphabets";
 
 type Phase = "intro" | "quiz" | "revealing" | "revealed" | "dashboard";
+
+const sentenceCounts: Record<string, number> = {
+  santhali: santhaliSentences.length,
+  gondi: gondiSentences.length,
+  kurukh: kurukhSentences.length,
+};
+const alphabetCounts: Record<string, number> = {
+  santhali: santhaliAlphabets.length,
+  gondi: gondiAlphabets.length,
+  kurukh: kurukhAlphabets.length,
+};
 
 const ClanFinder = () => {
   const navigate = useNavigate();
@@ -14,33 +30,28 @@ const ClanFinder = () => {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [assignedClan, setAssignedClan] = useState<ClanInfo | null>(null);
   const [revealStep, setRevealStep] = useState(0);
-  const [pathProgress, setPathProgress] = useState(0);
+  const { getLanguageProgress, totalLearned } = useLearnedItems();
 
-  // Check localStorage for existing clan
   useEffect(() => {
     const saved = localStorage.getItem("tribalClan");
     if (saved && clans[saved]) {
       setAssignedClan(clans[saved]);
       setPhase("dashboard");
-      setPathProgress(100);
     }
   }, []);
 
   const handleAnswer = useCallback((optionIdx: number) => {
     if (selectedOption !== null) return;
     setSelectedOption(optionIdx);
-
     const option = ritualQuestions[currentQ].options[optionIdx];
     const newScores = { ...scores };
     Object.entries(option.scores).forEach(([k, v]) => { newScores[k] += v; });
     setScores(newScores);
-
     setTimeout(() => {
       setSelectedOption(null);
       if (currentQ < ritualQuestions.length - 1) {
         setCurrentQ(currentQ + 1);
       } else {
-        // Determine clan
         const winner = Object.entries(newScores).sort((a, b) => b[1] - a[1])[0][0];
         const clan = clans[winner];
         setAssignedClan(clan);
@@ -50,7 +61,6 @@ const ClanFinder = () => {
     }, 600);
   }, [currentQ, scores, selectedOption]);
 
-  // Reveal animation sequence
   useEffect(() => {
     if (phase !== "revealing") return;
     const timers = [
@@ -63,37 +73,82 @@ const ClanFinder = () => {
     return () => timers.forEach(clearTimeout);
   }, [phase]);
 
-  // Path unlock animation on dashboard
-  useEffect(() => {
-    if (phase !== "dashboard") return;
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 2;
-      setPathProgress(Math.min(progress, 100));
-      if (progress >= 100) clearInterval(interval);
-    }, 30);
-    return () => clearInterval(interval);
-  }, [phase]);
-
   const resetClan = () => {
     localStorage.removeItem("tribalClan");
     setAssignedClan(null);
     setPhase("intro");
     setCurrentQ(0);
     setScores({ santhali: 0, gondi: 0, kurukh: 0 });
-    setPathProgress(0);
     setRevealStep(0);
   };
 
+  // Compute real progress for the forest path
+  const progressData = useMemo(() => {
+    if (!assignedClan) return { totalItems: 0, learnedItems: 0, percent: 0, categoriesComplete: 0, totalCategories: 0, sentencesDone: 0, totalSentences: 0, lettersDone: 0, totalLetters: 0 };
+    const langId = assignedClan.languageId;
+    const langWords = allWords[langId] || {};
+    let totalWords = 0;
+    let learnedWords = 0;
+    let categoriesComplete = 0;
+
+    categories.forEach(cat => {
+      const catWords = langWords[cat.id] || [];
+      totalWords += catWords.length;
+      let catLearned = 0;
+      catWords.forEach(w => {
+        const id = `${langId}-word-${w.id}`;
+        if (localStorage.getItem("tribalLingua_learnedItems")) {
+          try {
+            const items: string[] = JSON.parse(localStorage.getItem("tribalLingua_learnedItems") || "[]");
+            if (items.includes(id)) { learnedWords++; catLearned++; }
+          } catch { /* */ }
+        }
+      });
+      if (catWords.length > 0 && catLearned === catWords.length) categoriesComplete++;
+    });
+
+    // Count sentences
+    const totalSentences = sentenceCounts[langId] || 0;
+    let sentencesDone = 0;
+    try {
+      const items: string[] = JSON.parse(localStorage.getItem("tribalLingua_learnedItems") || "[]");
+      sentencesDone = items.filter(id => id.startsWith(`${langId}-sentence-`)).length;
+    } catch { /* */ }
+
+    // Count letters
+    const totalLetters = alphabetCounts[langId] || 0;
+    let lettersDone = 0;
+    try {
+      const items: string[] = JSON.parse(localStorage.getItem("tribalLingua_learnedItems") || "[]");
+      lettersDone = items.filter(id => id.startsWith(`${langId}-letter-`)).length;
+    } catch { /* */ }
+
+    const totalItems = totalWords + totalSentences + totalLetters;
+    const learnedItems = learnedWords + sentencesDone + lettersDone;
+    const percent = totalItems > 0 ? Math.round((learnedItems / totalItems) * 100) : 0;
+
+    return { totalItems, learnedItems, percent, categoriesComplete, totalCategories: categories.length, sentencesDone, totalSentences, lettersDone, totalLetters };
+  }, [assignedClan, totalLearned]);
+
+  // Milestone thresholds for unlocking path nodes
+  const houseUnlocked = true; // always
+  const questsUnlocked = progressData.percent >= 10;
+  const warUnlocked = progressData.percent >= 40;
+  const elderUnlocked = progressData.percent >= 75;
+
   return (
-    <div className="min-h-screen pb-24 bg-[#0a0a0a] overflow-hidden relative">
+    <div className="min-h-screen pb-24 overflow-hidden relative" style={{ background: "#060d08" }}>
       {/* Ambient particles */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        {[...Array(20)].map((_, i) => (
+        {[...Array(25)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-1 h-1 rounded-full bg-emerald-500/30"
+            className="absolute rounded-full"
             style={{
+              width: `${1 + Math.random() * 2}px`,
+              height: `${1 + Math.random() * 2}px`,
+              background: progressData.percent > 20 ? "#4ade80" : "#1a1a1a",
+              opacity: progressData.percent > 20 ? 0.3 + Math.random() * 0.3 : 0.1,
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
               animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
@@ -106,28 +161,29 @@ const ClanFinder = () => {
       {/* INTRO PHASE */}
       {phase === "intro" && (
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6">
-          <button onClick={() => navigate(-1)} className="absolute top-6 left-4 text-emerald-400/70">
+          <button onClick={() => navigate(-1)} className="absolute top-6 left-4" style={{ color: "#4ade8088" }}>
             <ArrowLeft className="h-6 w-6" />
           </button>
-          
           <div className="animate-fade-in-up text-center space-y-6">
-            <div className="w-24 h-24 mx-auto rounded-full border-2 border-emerald-500/40 flex items-center justify-center bg-emerald-900/20 animate-float">
-              <Sparkles className="w-10 h-10 text-emerald-400" />
+            <div className="w-28 h-28 mx-auto rounded-full flex items-center justify-center animate-float"
+              style={{ border: "2px solid #22c55e33", background: "radial-gradient(circle, #14532d22, transparent)" }}>
+              <Sparkles className="w-12 h-12" style={{ color: "#4ade80" }} />
             </div>
-            <h1 className="font-heading text-3xl text-emerald-100 tracking-wide">
+            <h1 className="font-heading text-3xl tracking-wide" style={{ color: "#d1fae5" }}>
               The Clan Ritual
             </h1>
-            <p className="font-body text-emerald-300/70 text-sm max-w-xs mx-auto leading-relaxed">
-              The ancient spirits will guide you through five sacred questions. 
-              Answer with your heart — your clan awaits.
+            <p className="font-body text-sm max-w-xs mx-auto leading-relaxed" style={{ color: "#4ade8066" }}>
+              The ancient spirits will guide you through five sacred questions. Answer with your heart — your clan awaits.
             </p>
             <button
               onClick={() => setPhase("quiz")}
-              className="mt-8 px-8 py-4 rounded-xl font-heading text-sm font-semibold tracking-wider uppercase
-                bg-gradient-to-r from-emerald-700 to-emerald-600 text-emerald-100
-                shadow-[0_0_30px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(16,185,129,0.35)]
-                transition-all duration-300 hover:scale-105 active:scale-95"
-              style={{ minHeight: 65 }}
+              className="mt-8 px-8 py-4 rounded-xl font-heading text-sm font-semibold tracking-wider uppercase transition-all duration-300 hover:scale-105 active:scale-95"
+              style={{
+                background: "linear-gradient(135deg, #166534, #15803d)",
+                color: "#d1fae5",
+                boxShadow: "0 0 40px #22c55e22",
+                minHeight: 65,
+              }}
             >
               Begin the Ritual
             </button>
@@ -138,50 +194,43 @@ const ClanFinder = () => {
       {/* QUIZ PHASE */}
       {phase === "quiz" && (
         <div className="relative z-10 flex flex-col min-h-screen px-5 pt-12 pb-28">
-          {/* Progress stones */}
           <div className="flex items-center justify-center gap-3 mb-10">
             {ritualQuestions.map((_, i) => (
-              <div
-                key={i}
-                className={`w-3 h-3 rounded-full transition-all duration-500 ${
-                  i < currentQ ? "bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
-                  : i === currentQ ? "bg-emerald-500 scale-125 shadow-[0_0_12px_rgba(16,185,129,0.8)]"
-                  : "bg-emerald-900/40"
-                }`}
+              <div key={i} className="rounded-full transition-all duration-500"
+                style={{
+                  width: i === currentQ ? 14 : 10,
+                  height: i === currentQ ? 14 : 10,
+                  background: i < currentQ ? "#4ade80" : i === currentQ ? "#22c55e" : "#1a2e1f",
+                  boxShadow: i <= currentQ ? "0 0 8px #22c55e44" : "none",
+                }}
               />
             ))}
           </div>
-
-          {/* Question */}
           <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
-            <p className="text-emerald-500/50 text-xs font-body uppercase tracking-[0.3em] mb-4">
+            <p className="text-xs font-body uppercase tracking-[0.3em] mb-4" style={{ color: "#22c55e55" }}>
               Question {currentQ + 1} of {ritualQuestions.length}
             </p>
-            <h2
-              key={currentQ}
-              className="font-heading text-xl text-emerald-100 text-center leading-relaxed mb-10 animate-fade-in-up"
-            >
+            <h2 key={currentQ} className="font-heading text-xl text-center leading-relaxed mb-10 animate-fade-in-up" style={{ color: "#d1fae5" }}>
               "{ritualQuestions[currentQ].question}"
             </h2>
-
             <div className="w-full space-y-3">
               {ritualQuestions[currentQ].options.map((opt, i) => (
                 <button
                   key={i}
                   onClick={() => handleAnswer(i)}
                   disabled={selectedOption !== null}
-                  className={`w-full text-left px-5 py-4 rounded-xl font-body text-sm transition-all duration-300
-                    border border-emerald-800/30 backdrop-blur-sm
-                    ${selectedOption === i
-                      ? "bg-emerald-600/40 border-emerald-400 text-emerald-100 scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-                      : selectedOption !== null
-                        ? "bg-emerald-950/20 text-emerald-600/50"
-                        : "bg-emerald-950/30 text-emerald-200/80 hover:bg-emerald-900/40 hover:border-emerald-600/50 active:scale-[0.98]"
-                    }`}
-                  style={{ minHeight: 65 }}
+                  className="w-full text-left px-5 py-4 rounded-xl font-body text-sm transition-all duration-300"
+                  style={{
+                    border: `1px solid ${selectedOption === i ? "#22c55e" : "#1a2e1f"}`,
+                    background: selectedOption === i ? "#166534aa" : selectedOption !== null ? "#0a0a0a" : "#0d1f1166",
+                    color: selectedOption === i ? "#d1fae5" : selectedOption !== null ? "#1a2e1f" : "#86efac99",
+                    boxShadow: selectedOption === i ? "0 0 20px #22c55e33" : "none",
+                    minHeight: 65,
+                  }}
                 >
                   <span className="flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-full border border-emerald-700/50 flex items-center justify-center text-xs text-emerald-500/70 shrink-0">
+                    <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0"
+                      style={{ border: "1px solid #1a3a22", color: "#22c55e77" }}>
                       {String.fromCharCode(65 + i)}
                     </span>
                     {opt.text}
@@ -198,24 +247,18 @@ const ClanFinder = () => {
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6">
           <div className="text-center space-y-6">
             {revealStep >= 1 && (
-              <p className="font-body text-emerald-500/60 text-sm animate-fade-in-up tracking-widest uppercase">
+              <p className="font-body text-sm animate-fade-in-up tracking-widest uppercase" style={{ color: "#22c55e66" }}>
                 The spirits have spoken...
               </p>
             )}
             {revealStep >= 2 && (
-              <div className="w-28 h-28 mx-auto rounded-full flex items-center justify-center text-5xl animate-fade-in-up"
-                style={{
-                  background: `radial-gradient(circle, ${assignedClan.color}44, transparent)`,
-                  boxShadow: `0 0 60px ${assignedClan.color}33`,
-                }}
-              >
+              <div className="w-32 h-32 mx-auto rounded-full flex items-center justify-center text-6xl animate-fade-in-up"
+                style={{ background: `radial-gradient(circle, ${assignedClan.color}66, transparent)`, boxShadow: `0 0 80px ${assignedClan.color}44` }}>
                 {assignedClan.spiritAnimalEmoji}
               </div>
             )}
             {revealStep >= 3 && (
-              <h1 className="font-heading text-3xl tracking-wide animate-fade-in-up"
-                style={{ color: assignedClan.accentColor }}
-              >
+              <h1 className="font-heading text-3xl tracking-wide animate-fade-in-up" style={{ color: assignedClan.accentColor }}>
                 {assignedClan.name}
               </h1>
             )}
@@ -232,60 +275,35 @@ const ClanFinder = () => {
       {phase === "revealed" && assignedClan && (
         <div className="relative z-10 flex flex-col items-center min-h-screen px-5 pt-10 pb-28">
           <div className="animate-fade-in-up w-full max-w-sm space-y-6">
-            {/* Clan Card */}
-            <div
-              className="rounded-2xl p-6 space-y-4 border"
-              style={{
-                background: `linear-gradient(145deg, ${assignedClan.color}22, ${assignedClan.color}0a)`,
-                borderColor: `${assignedClan.color}44`,
-                boxShadow: `0 8px 40px ${assignedClan.color}15`,
-              }}
-            >
+            <div className="rounded-2xl p-6 space-y-4"
+              style={{ background: `linear-gradient(145deg, ${assignedClan.color}22, ${assignedClan.color}0a)`, border: `1px solid ${assignedClan.color}44`, boxShadow: `0 8px 40px ${assignedClan.color}15` }}>
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl"
-                  style={{ background: `${assignedClan.color}33` }}
-                >
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl" style={{ background: `${assignedClan.color}33` }}>
                   {assignedClan.spiritAnimalEmoji}
                 </div>
                 <div>
-                  <h2 className="font-heading text-lg" style={{ color: assignedClan.accentColor }}>
-                    {assignedClan.name}
-                  </h2>
-                  <p className="font-body text-xs text-emerald-400/60">{assignedClan.language} · {assignedClan.territory}</p>
+                  <h2 className="font-heading text-lg" style={{ color: assignedClan.accentColor }}>{assignedClan.name}</h2>
+                  <p className="font-body text-xs" style={{ color: "#4ade8066" }}>{assignedClan.language} · {assignedClan.territory}</p>
                 </div>
               </div>
-              <p className="font-body text-xs leading-relaxed text-emerald-200/60">
-                {assignedClan.description}
-              </p>
-              <div className="flex items-center gap-2 text-xs text-emerald-400/50 font-body">
-                <span>Spirit Animal:</span>
-                <span className="font-semibold text-emerald-300">{assignedClan.spiritAnimal} {assignedClan.spiritAnimalEmoji}</span>
-              </div>
+              <p className="font-body text-xs leading-relaxed" style={{ color: "#d1fae566" }}>{assignedClan.description}</p>
             </div>
 
-            {/* Starter Words */}
             <div className="space-y-2">
-              <h3 className="font-heading text-sm text-emerald-300/80">Your First Words</h3>
+              <h3 className="font-heading text-sm" style={{ color: "#86efac99" }}>Your First Words</h3>
               {assignedClan.starterWords.map((w, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl bg-emerald-950/40 border border-emerald-800/20 px-4 py-3">
-                  <span className="font-heading text-lg text-emerald-200">{w.word}</span>
-                  <span className="font-body text-xs text-emerald-500/60">/{w.pronunciation}/</span>
-                  <span className="ml-auto font-body text-xs text-emerald-400/70">{w.meaning}</span>
+                <div key={i} className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: "#0d1f1166", border: "1px solid #1a2e1f" }}>
+                  <span className="font-heading text-lg" style={{ color: "#d1fae5" }}>{w.word}</span>
+                  <span className="font-body text-xs" style={{ color: "#22c55e66" }}>/{w.pronunciation}/</span>
+                  <span className="ml-auto font-body text-xs" style={{ color: "#4ade8088" }}>{w.meaning}</span>
                 </div>
               ))}
             </div>
 
-            {/* Enter Clan */}
             <button
               onClick={() => setPhase("dashboard")}
-              className="w-full py-4 rounded-xl font-heading text-sm font-semibold tracking-wider uppercase
-                transition-all duration-300 hover:scale-[1.02] active:scale-95"
-              style={{
-                background: `linear-gradient(135deg, ${assignedClan.color}, ${assignedClan.color}cc)`,
-                color: assignedClan.accentColor,
-                boxShadow: `0 0 30px ${assignedClan.color}33`,
-                minHeight: 65,
-              }}
+              className="w-full py-4 rounded-xl font-heading text-sm font-semibold tracking-wider uppercase transition-all duration-300 hover:scale-[1.02] active:scale-95"
+              style={{ background: `linear-gradient(135deg, ${assignedClan.color}, ${assignedClan.color}cc)`, color: assignedClan.accentColor, boxShadow: `0 0 30px ${assignedClan.color}33`, minHeight: 65 }}
             >
               Enter Your Clan House →
             </button>
@@ -293,121 +311,177 @@ const ClanFinder = () => {
         </div>
       )}
 
-      {/* DASHBOARD PHASE — Forest Path */}
+      {/* DASHBOARD PHASE — Immersive Forest */}
       {phase === "dashboard" && assignedClan && (
         <div className="relative z-10 min-h-screen px-5 pt-8 pb-28">
           <div className="mx-auto max-w-sm">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="font-body text-xs uppercase tracking-widest" style={{ color: `${assignedClan.accentColor}88` }}>
-                  Your Clan
-                </p>
-                <h1 className="font-heading text-xl" style={{ color: assignedClan.accentColor }}>
-                  {assignedClan.name}
-                </h1>
+                <p className="font-body text-[10px] uppercase tracking-[0.2em]" style={{ color: `${assignedClan.accentColor}66` }}>Your Clan</p>
+                <h1 className="font-heading text-xl" style={{ color: assignedClan.accentColor }}>{assignedClan.name}</h1>
               </div>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
-                style={{ background: `${assignedClan.color}33` }}
-              >
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: `${assignedClan.color}33` }}>
                 {assignedClan.spiritAnimalEmoji}
               </div>
             </div>
 
-            {/* Forest Path SVG */}
-            <div className="relative rounded-2xl overflow-hidden mb-6 border border-emerald-800/20"
-              style={{ height: 360, background: "linear-gradient(180deg, #0a1a0f 0%, #0d1f14 50%, #0a150e 100%)" }}
-            >
-              {/* Tree silhouettes */}
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 360" preserveAspectRatio="xMidYMid slice">
-                {/* Background trees */}
-                {[40, 100, 160, 240, 300, 360].map((x, i) => (
-                  <g key={i} opacity={0.15 + (i % 3) * 0.05}>
-                    <polygon points={`${x},${280 - i * 15} ${x - 20},${320} ${x + 20},${320}`} fill="#1a5a2a" />
-                    <polygon points={`${x},${260 - i * 15} ${x - 15},${290 - i * 15} ${x + 15},${290 - i * 15}`} fill="#1a5a2a" />
-                  </g>
-                ))}
+            {/* Progress summary */}
+            <div className="rounded-xl px-4 py-3 mb-4 flex items-center gap-3" style={{ background: "#0d1f1166", border: "1px solid #1a2e1f" }}>
+              <div className="flex-1">
+                <p className="font-body text-xs" style={{ color: "#86efac88" }}>
+                  {progressData.learnedItems} / {progressData.totalItems} items learned
+                </p>
+                <div className="h-2 rounded-full mt-1.5 overflow-hidden" style={{ background: "#1a2e1f" }}>
+                  <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${progressData.percent}%`, background: `linear-gradient(90deg, ${assignedClan.color}, ${assignedClan.accentColor})` }} />
+                </div>
+              </div>
+              <span className="font-heading text-lg" style={{ color: assignedClan.accentColor }}>{progressData.percent}%</span>
+            </div>
 
-                {/* The path — black to green transition */}
+            {/* THE FOREST PATH — Full immersive SVG */}
+            <div className="relative rounded-2xl overflow-hidden mb-5" style={{ height: 440, border: "1px solid #1a2e1f" }}>
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 440" preserveAspectRatio="xMidYMid slice">
+                {/* Dark soil / ground gradient */}
                 <defs>
-                  <linearGradient id="pathGrad" x1="0" y1="1" x2="0" y2="0">
-                    <stop offset="0%" stopColor="#1a1a1a" />
-                    <stop offset={`${pathProgress}%`} stopColor={assignedClan.color} />
-                    <stop offset={`${Math.min(pathProgress + 5, 100)}%`} stopColor="#1a1a1a" />
-                    <stop offset="100%" stopColor="#1a1a1a" />
+                  <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#030a05" />
+                    <stop offset="100%" stopColor="#0a1a0f" />
                   </linearGradient>
-                  <filter id="glow">
-                    <feGaussianBlur stdDeviation="3" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
+                  <linearGradient id="forestReveal" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor={progressData.percent > 5 ? "#0d3320" : "#0a0a0a"} />
+                    <stop offset={`${Math.min(progressData.percent, 100)}%`} stopColor={progressData.percent > 5 ? "#166534" : "#0a0a0a"} />
+                    <stop offset={`${Math.min(progressData.percent + 3, 100)}%`} stopColor="#0a0a0a" />
+                    <stop offset="100%" stopColor="#0a0a0a" />
+                  </linearGradient>
+                  <filter id="treeglow">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                   </filter>
+                  <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor={assignedClan.accentColor} stopOpacity="0.4" />
+                    <stop offset="100%" stopColor={assignedClan.accentColor} stopOpacity="0" />
+                  </radialGradient>
                 </defs>
 
-                {/* Path curve */}
+                <rect width="400" height="440" fill="url(#groundGrad)" />
+
+                {/* Tree silhouettes — dark when locked, green when unlocked */}
+                {[
+                  { x: 30, h: 80, base: 400 }, { x: 70, h: 100, base: 390 }, { x: 120, h: 60, base: 410 },
+                  { x: 330, h: 90, base: 395 }, { x: 370, h: 70, base: 405 }, { x: 280, h: 85, base: 398 },
+                  { x: 50, h: 75, base: 300 }, { x: 350, h: 65, base: 310 },
+                  { x: 40, h: 70, base: 200 }, { x: 360, h: 80, base: 210 },
+                  { x: 60, h: 90, base: 100 }, { x: 340, h: 75, base: 110 },
+                  { x: 30, h: 60, base: 50 }, { x: 370, h: 70, base: 40 },
+                ].map((tree, i) => {
+                  const treeProgress = ((440 - tree.base) / 440) * 100;
+                  const isGreen = treeProgress < progressData.percent;
+                  return (
+                    <g key={i}>
+                      {/* Trunk */}
+                      <rect x={tree.x - 3} y={tree.base - tree.h * 0.3} width={6} height={tree.h * 0.3} fill={isGreen ? "#1a3a22" : "#111"} />
+                      {/* Canopy layers */}
+                      <polygon
+                        points={`${tree.x},${tree.base - tree.h} ${tree.x - tree.h * 0.35},${tree.base - tree.h * 0.3} ${tree.x + tree.h * 0.35},${tree.base - tree.h * 0.3}`}
+                        fill={isGreen ? "#14532d" : "#0d0d0d"}
+                        opacity={isGreen ? 0.8 : 0.3}
+                      />
+                      <polygon
+                        points={`${tree.x},${tree.base - tree.h * 0.8} ${tree.x - tree.h * 0.28},${tree.base - tree.h * 0.35} ${tree.x + tree.h * 0.28},${tree.base - tree.h * 0.35}`}
+                        fill={isGreen ? "#166534" : "#111"}
+                        opacity={isGreen ? 0.7 : 0.2}
+                      />
+                    </g>
+                  );
+                })}
+
+                {/* Main path — S-curve from bottom to top */}
                 <path
-                  d="M200,340 C200,300 180,260 190,220 C200,180 220,160 200,120 C180,80 200,40 200,20"
-                  stroke="url(#pathGrad)"
-                  strokeWidth="6"
+                  d="M200,430 C160,380 240,340 200,300 C160,260 240,220 200,180 C160,140 240,100 200,60 C180,30 200,10 200,10"
+                  stroke="url(#forestReveal)"
+                  strokeWidth="8"
                   fill="none"
                   strokeLinecap="round"
-                  filter="url(#glow)"
+                  filter="url(#treeglow)"
+                />
+                {/* Path border glow */}
+                <path
+                  d="M200,430 C160,380 240,340 200,300 C160,260 240,220 200,180 C160,140 240,100 200,60 C180,30 200,10 200,10"
+                  stroke={assignedClan.color}
+                  strokeWidth="1"
+                  fill="none"
+                  strokeLinecap="round"
+                  opacity={0.15}
                 />
 
-                {/* Path dots */}
+                {/* Path nodes */}
                 {[
-                  { cx: 200, cy: 330, label: "Clan House", unlocked: true },
-                  { cx: 190, cy: 250, label: "Quests", unlocked: pathProgress > 30 },
-                  { cx: 205, cy: 170, label: "Clan War", unlocked: pathProgress > 60 },
-                  { cx: 195, cy: 80, label: "Elder Chamber", unlocked: pathProgress > 90 },
+                  { cx: 200, cy: 410, unlocked: houseUnlocked },
+                  { cx: 220, cy: 300, unlocked: questsUnlocked },
+                  { cx: 180, cy: 190, unlocked: warUnlocked },
+                  { cx: 200, cy: 50, unlocked: elderUnlocked },
                 ].map((node, i) => (
                   <g key={i}>
+                    {node.unlocked && <circle cx={node.cx} cy={node.cy} r={24} fill="url(#nodeGlow)" />}
                     <circle
-                      cx={node.cx} cy={node.cy} r={node.unlocked ? 12 : 8}
-                      fill={node.unlocked ? assignedClan.color : "#1a1a1a"}
-                      stroke={node.unlocked ? assignedClan.accentColor : "#333"}
-                      strokeWidth={2}
+                      cx={node.cx} cy={node.cy}
+                      r={node.unlocked ? 14 : 10}
+                      fill={node.unlocked ? assignedClan.color : "#111"}
+                      stroke={node.unlocked ? assignedClan.accentColor : "#222"}
+                      strokeWidth={node.unlocked ? 2.5 : 1.5}
                     />
                     {node.unlocked && (
-                      <circle cx={node.cx} cy={node.cy} r={4} fill={assignedClan.accentColor} />
+                      <circle cx={node.cx} cy={node.cy} r={5} fill={assignedClan.accentColor}>
+                        <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" />
+                      </circle>
                     )}
                   </g>
                 ))}
 
-                {/* Fireflies on unlocked path */}
-                {pathProgress > 20 && [...Array(6)].map((_, i) => (
-                  <circle
-                    key={i}
-                    cx={185 + Math.sin(i * 1.2) * 30}
-                    cy={320 - (i * 50)}
-                    r={1.5}
-                    fill="#7dffb3"
-                    opacity={pathProgress > (i * 16) ? 0.7 : 0}
-                  >
-                    <animate attributeName="opacity" values="0.3;0.8;0.3" dur={`${2 + i * 0.5}s`} repeatCount="indefinite" />
-                  </circle>
-                ))}
+                {/* Fireflies scattered on unlocked area */}
+                {progressData.percent > 5 && [...Array(12)].map((_, i) => {
+                  const fy = 430 - (i * 35);
+                  const fx = 100 + Math.sin(i * 1.7) * 100 + Math.random() * 60;
+                  const visible = ((440 - fy) / 440) * 100 < progressData.percent;
+                  if (!visible) return null;
+                  return (
+                    <circle key={i} cx={fx} cy={fy} r={1.5} fill="#7dffb3" opacity={0.5}>
+                      <animate attributeName="opacity" values="0.2;0.7;0.2" dur={`${2 + (i % 4)}s`} repeatCount="indefinite" />
+                      <animate attributeName="cy" values={`${fy};${fy - 3};${fy}`} dur={`${3 + (i % 3)}s`} repeatCount="indefinite" />
+                    </circle>
+                  );
+                })}
               </svg>
 
-              {/* Node labels */}
+              {/* Node labels overlay */}
               {[
-                { x: "58%", y: "88%", label: "Clan House", icon: "🏠", unlocked: true },
-                { x: "58%", y: "66%", label: "Quests", icon: "⚔️", unlocked: pathProgress > 30 },
-                { x: "60%", y: "44%", label: "Clan War", icon: "🔥", unlocked: pathProgress > 60 },
-                { x: "58%", y: "19%", label: "Elder Chamber", icon: "👁️", unlocked: pathProgress > 90 },
+                { x: "60%", y: "91%", label: "Clan House", icon: "🏠", unlocked: houseUnlocked, desc: "Your home base" },
+                { x: "62%", y: "66%", label: "Quests", icon: "⚔️", unlocked: questsUnlocked, desc: "10% to unlock" },
+                { x: "14%", y: "41%", label: "Clan War", icon: "🔥", unlocked: warUnlocked, desc: "40% to unlock" },
+                { x: "58%", y: "9%", label: "Elder Chamber", icon: "👁️", unlocked: elderUnlocked, desc: "75% to unlock" },
               ].map((node, i) => (
                 <div
                   key={i}
-                  className="absolute flex items-center gap-2 font-body text-xs"
+                  className="absolute flex items-center gap-1.5 font-body"
                   style={{ left: node.x, top: node.y, transform: "translateY(-50%)" }}
                 >
-                  <span>{node.icon}</span>
-                  <span className={node.unlocked ? "text-emerald-300" : "text-emerald-800/40"}>
-                    {node.label}
-                  </span>
-                  {!node.unlocked && <Lock className="w-3 h-3 text-emerald-800/30" />}
-                  {node.unlocked && <Unlock className="w-3 h-3 text-emerald-500/50" />}
+                  <span className="text-base">{node.icon}</span>
+                  <div>
+                    <p className="text-xs font-semibold" style={{ color: node.unlocked ? "#d1fae5" : "#1a2e1f" }}>
+                      {node.label}
+                    </p>
+                    {!node.unlocked && (
+                      <p className="text-[9px] flex items-center gap-0.5" style={{ color: "#1a3a2266" }}>
+                        <Lock className="w-2.5 h-2.5" /> {node.desc}
+                      </p>
+                    )}
+                    {node.unlocked && (
+                      <p className="text-[9px] flex items-center gap-0.5" style={{ color: "#22c55e66" }}>
+                        <Unlock className="w-2.5 h-2.5" /> Unlocked
+                      </p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -416,47 +490,52 @@ const ClanFinder = () => {
             <div className="space-y-3">
               <button
                 onClick={() => navigate(`/learn/${assignedClan.languageId}`)}
-                className="w-full flex items-center gap-4 rounded-xl bg-emerald-950/40 border border-emerald-800/20 p-4 transition-all hover:bg-emerald-900/30 active:scale-[0.98]"
-                style={{ minHeight: 65 }}
+                className="w-full flex items-center gap-4 rounded-xl p-4 transition-all active:scale-[0.98]"
+                style={{ background: "#0d1f1166", border: "1px solid #1a2e1f", minHeight: 65 }}
               >
                 <span className="text-2xl">📖</span>
                 <div className="flex-1 text-left">
-                  <p className="font-heading text-sm text-emerald-200">Learn {assignedClan.language}</p>
-                  <p className="font-body text-xs text-emerald-500/60">Start your clan's language journey</p>
+                  <p className="font-heading text-sm" style={{ color: "#d1fae5" }}>Learn {assignedClan.language}</p>
+                  <p className="font-body text-xs" style={{ color: "#22c55e55" }}>
+                    Words · Letters · Phrases
+                  </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-emerald-600" />
+                <ChevronRight className="w-4 h-4" style={{ color: "#166534" }} />
               </button>
 
               <button
                 onClick={() => navigate(`/quiz/${assignedClan.languageId}`)}
-                className="w-full flex items-center gap-4 rounded-xl bg-emerald-950/40 border border-emerald-800/20 p-4 transition-all hover:bg-emerald-900/30 active:scale-[0.98]"
-                style={{ minHeight: 65 }}
+                className={`w-full flex items-center gap-4 rounded-xl p-4 transition-all ${questsUnlocked ? "active:scale-[0.98]" : "opacity-40"}`}
+                style={{ background: "#0d1f1166", border: "1px solid #1a2e1f", minHeight: 65 }}
+                disabled={!questsUnlocked}
               >
                 <span className="text-2xl">⚔️</span>
                 <div className="flex-1 text-left">
-                  <p className="font-heading text-sm text-emerald-200">Clan Quests</p>
-                  <p className="font-body text-xs text-emerald-500/60">Test your skills in battle</p>
+                  <p className="font-heading text-sm" style={{ color: questsUnlocked ? "#d1fae5" : "#1a2e1f" }}>Clan Quests</p>
+                  <p className="font-body text-xs" style={{ color: "#22c55e55" }}>
+                    {questsUnlocked ? "Test your skills" : "Learn 10% to unlock"}
+                  </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-emerald-600" />
+                {questsUnlocked ? <ChevronRight className="w-4 h-4" style={{ color: "#166534" }} /> : <Lock className="w-4 h-4" style={{ color: "#1a2e1f" }} />}
               </button>
 
               <button
                 onClick={() => navigate(`/folkvault/${assignedClan.languageId}`)}
-                className="w-full flex items-center gap-4 rounded-xl bg-emerald-950/40 border border-emerald-800/20 p-4 transition-all hover:bg-emerald-900/30 active:scale-[0.98]"
-                style={{ minHeight: 65 }}
+                className="w-full flex items-center gap-4 rounded-xl p-4 transition-all active:scale-[0.98]"
+                style={{ background: "#0d1f1166", border: "1px solid #1a2e1f", minHeight: 65 }}
               >
                 <span className="text-2xl">📜</span>
                 <div className="flex-1 text-left">
-                  <p className="font-heading text-sm text-emerald-200">Clan Stories</p>
-                  <p className="font-body text-xs text-emerald-500/60">Tales of your people</p>
+                  <p className="font-heading text-sm" style={{ color: "#d1fae5" }}>Clan Stories</p>
+                  <p className="font-body text-xs" style={{ color: "#22c55e55" }}>Tales of your people</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-emerald-600" />
+                <ChevronRight className="w-4 h-4" style={{ color: "#166534" }} />
               </button>
 
-              {/* Retake quiz */}
               <button
                 onClick={resetClan}
-                className="w-full text-center py-3 font-body text-xs text-emerald-700/50 hover:text-emerald-500/70 transition-colors"
+                className="w-full text-center py-3 font-body text-xs transition-colors"
+                style={{ color: "#1a3a2266" }}
               >
                 Retake the Clan Ritual
               </button>
