@@ -533,6 +533,22 @@ const ClanFinder = () => {
               </button>
 
               <button
+                onClick={() => elderUnlocked && navigate("/elder")}
+                className={`w-full flex items-center gap-4 rounded-xl p-4 transition-all ${elderUnlocked ? "active:scale-[0.98]" : "opacity-40"}`}
+                style={{ background: "#0d1f1166", border: "1px solid #1a2e1f", minHeight: 65 }}
+                disabled={!elderUnlocked}
+              >
+                <span className="text-2xl">👁️</span>
+                <div className="flex-1 text-left">
+                  <p className="font-heading text-sm" style={{ color: elderUnlocked ? "#d1fae5" : "#1a2e1f" }}>Elder Chamber</p>
+                  <p className="font-body text-xs" style={{ color: "#22c55e55" }}>
+                    {elderUnlocked ? "Speak with the Glyph-Guard" : "Learn 75% to unlock"}
+                  </p>
+                </div>
+                {elderUnlocked ? <ChevronRight className="w-4 h-4" style={{ color: "#166534" }} /> : <Lock className="w-4 h-4" style={{ color: "#1a2e1f" }} />}
+              </button>
+
+              <button
                 onClick={resetClan}
                 className="w-full text-center py-3 font-body text-xs transition-colors"
                 style={{ color: "#1a3a2266" }}
