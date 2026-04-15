@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen, ArrowRight } from "lucide-react";
+import { BookOpen, ArrowRight, ScrollText } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import DailyWordCard from "@/components/DailyWordCard";
 import { languages } from "@/data/languages";
@@ -44,6 +44,22 @@ const Index = () => {
           <div className="flex-1 text-left">
             <h3 className="font-heading text-base font-semibold text-foreground">Resume Learning</h3>
             <p className="text-sm font-body text-muted-foreground">Continue where you left off</p>
+          </div>
+          <ArrowRight className="h-5 w-5 text-muted-foreground" />
+        </button>
+
+        {/* FolkVault / Stories */}
+        <button
+          onClick={() => navigate("/folkvault")}
+          className="flex w-full items-center gap-4 rounded-lg bg-card p-5 card-shadow transition-transform hover:scale-[1.01] active:scale-[0.99] animate-fade-in-up"
+          style={{ animationDelay: "0.15s" }}
+        >
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <ScrollText className="h-7 w-7 text-primary" />
+          </div>
+          <div className="flex-1 text-left">
+            <h3 className="font-heading text-base font-semibold text-foreground">FolkVault Stories</h3>
+            <p className="text-sm font-body text-muted-foreground">Folk tales & legends</p>
           </div>
           <ArrowRight className="h-5 w-5 text-muted-foreground" />
         </button>
