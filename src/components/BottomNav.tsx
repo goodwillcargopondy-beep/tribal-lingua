@@ -1,21 +1,21 @@
-import { Home, BookOpen, Brain, User, Landmark, Sparkles } from "lucide-react";
+import { Home, BookOpen, Brain, User, ScrollText, Sparkles } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const leftItems = [
   { path: "/", icon: Home, label: "Home" },
   { path: "/learn", icon: BookOpen, label: "Learn" },
+  { path: "/folkvault", icon: ScrollText, label: "Stories" },
 ];
 
 const rightItems = [
   { path: "/quiz", icon: Brain, label: "Quiz" },
-  { path: "/history", icon: Landmark, label: "History" },
   { path: "/profile", icon: User, label: "Profile" },
 ];
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isClanActive = location.pathname.startsWith("/clan");
+  const isClanActive = location.pathname.startsWith("/clan") || location.pathname === "/elder";
 
   const renderItem = ({ path, icon: Icon, label }: typeof leftItems[0]) => {
     const isActive = path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
@@ -23,12 +23,12 @@ const BottomNav = () => {
       <button
         key={path}
         onClick={() => navigate(path)}
-        className={`flex flex-col items-center gap-0.5 px-2 py-1.5 transition-colors ${
+        className={`flex flex-col items-center gap-0.5 px-1.5 py-1.5 transition-colors ${
           isActive ? "text-secondary" : "text-muted-foreground"
         }`}
       >
         <Icon className={`h-5 w-5 ${isActive ? "stroke-[2.5]" : ""}`} />
-        <span className="text-[9px] font-medium font-body">{label}</span>
+        <span className="text-[8px] font-medium font-body">{label}</span>
       </button>
     );
   };
@@ -53,7 +53,7 @@ const BottomNav = () => {
           >
             <Sparkles className="h-6 w-6 text-emerald-100" />
           </div>
-          <span className={`text-[9px] font-semibold font-body mt-0.5 ${
+          <span className={`text-[8px] font-semibold font-body mt-0.5 ${
             isClanActive ? "text-emerald-500" : "text-muted-foreground"
           }`}>
             Clan
