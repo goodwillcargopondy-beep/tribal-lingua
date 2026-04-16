@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { playLearnedSound } from "@/utils/soundEffects";
 
 const STORAGE_KEY = "tribalLingua_learnedItems";
 const XP_PER_WORD = 5;
@@ -41,6 +42,7 @@ export function useLearnedItems() {
         next.delete(itemId);
       } else {
         next.add(itemId);
+        playLearnedSound();
         toast({
           title: "✨ Marked as learned!",
           description: `+${XP_PER_WORD} XP earned`,
