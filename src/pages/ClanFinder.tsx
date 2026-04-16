@@ -2,12 +2,15 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Sparkles, ChevronRight, Lock, Unlock } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import MilestoneAnimation from "@/components/MilestoneAnimation";
 import { ritualQuestions, clans, ClanInfo } from "@/data/clanData";
 import { useLearnedItems } from "@/hooks/useLearnedItems";
 import { categories } from "@/data/languages";
 import { allWords } from "@/data/allWords";
 import { santhaliSentences, gondiSentences, kurukhSentences } from "@/data/sentences";
 import { santhaliAlphabets, gondiAlphabets, kurukhAlphabets } from "@/data/alphabets";
+import { playScrollSound, playUnlockSound, playFireSound, playTapSound } from "@/utils/soundEffects";
+import tribalVillageImg from "@/assets/tribal-village.jpg";
 
 type Phase = "intro" | "quiz" | "revealing" | "revealed" | "dashboard";
 
@@ -30,7 +33,10 @@ const ClanFinder = () => {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [assignedClan, setAssignedClan] = useState<ClanInfo | null>(null);
   const [revealStep, setRevealStep] = useState(0);
-  const { getLanguageProgress, totalLearned } = useLearnedItems();
+  const [milestoneAnim, setMilestoneAnim] = useState<{ show: boolean; type: "milestone"; message: string }>({ show: false, type: "milestone", message: "" });
+  const { totalLearned } = useLearnedItems();
+  // Track previously unlocked milestones
+  const [prevUnlocks, setPrevUnlocks] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const saved = localStorage.getItem("tribalClan");
@@ -38,10 +44,16 @@ const ClanFinder = () => {
       setAssignedClan(clans[saved]);
       setPhase("dashboard");
     }
+    // Load previously unlocked milestones
+    try {
+      const unlocks = JSON.parse(localStorage.getItem("tribalClanUnlocks") || "{}");
+      setPrevUnlocks(unlocks);
+    } catch { /* */ }
   }, []);
 
   const handleAnswer = useCallback((optionIdx: number) => {
     if (selectedOption !== null) return;
+    playTapSound();
     setSelectedOption(optionIdx);
     const option = ritualQuestions[currentQ].options[optionIdx];
     const newScores = { ...scores };
@@ -56,6 +68,7 @@ const ClanFinder = () => {
         const clan = clans[winner];
         setAssignedClan(clan);
         localStorage.setItem("tribalClan", winner);
+        playScrollSound();
         setPhase("revealing");
       }
     }, 600);
@@ -65,98 +78,94 @@ const ClanFinder = () => {
     if (phase !== "revealing") return;
     const timers = [
       setTimeout(() => setRevealStep(1), 500),
-      setTimeout(() => setRevealStep(2), 1500),
+      setTimeout(() => { setRevealStep(2); playFireSound(); }, 1500),
       setTimeout(() => setRevealStep(3), 2500),
-      setTimeout(() => setRevealStep(4), 3500),
-      setTimeout(() => setPhase("revealed"), 4500),
+      setTimeout(() => { setRevealStep(4); playUnlockSound(); }, 3500),
+      setTimeout(() => setPhase("revealed"), 5000),
     ];
     return () => timers.forEach(clearTimeout);
   }, [phase]);
 
   const resetClan = () => {
     localStorage.removeItem("tribalClan");
+    localStorage.removeItem("tribalClanUnlocks");
     setAssignedClan(null);
     setPhase("intro");
     setCurrentQ(0);
     setScores({ santhali: 0, gondi: 0, kurukh: 0 });
     setRevealStep(0);
+    setPrevUnlocks({});
   };
 
-  // Compute real progress for the forest path
   const progressData = useMemo(() => {
-    if (!assignedClan) return { totalItems: 0, learnedItems: 0, percent: 0, categoriesComplete: 0, totalCategories: 0, sentencesDone: 0, totalSentences: 0, lettersDone: 0, totalLetters: 0 };
+    if (!assignedClan) return { totalItems: 0, learnedItems: 0, percent: 0 };
     const langId = assignedClan.languageId;
     const langWords = allWords[langId] || {};
-    let totalWords = 0;
-    let learnedWords = 0;
-    let categoriesComplete = 0;
+    let totalWords = 0, learnedWords = 0;
 
-    categories.forEach(cat => {
-      const catWords = langWords[cat.id] || [];
-      totalWords += catWords.length;
-      let catLearned = 0;
-      catWords.forEach(w => {
-        const id = `${langId}-word-${w.id}`;
-        if (localStorage.getItem("tribalLingua_learnedItems")) {
-          try {
-            const items: string[] = JSON.parse(localStorage.getItem("tribalLingua_learnedItems") || "[]");
-            if (items.includes(id)) { learnedWords++; catLearned++; }
-          } catch { /* */ }
-        }
+    try {
+      const items: string[] = JSON.parse(localStorage.getItem("tribalLingua_learnedItems") || "[]");
+      const itemSet = new Set(items);
+
+      categories.forEach(cat => {
+        const catWords = langWords[cat.id] || [];
+        totalWords += catWords.length;
+        catWords.forEach(w => { if (itemSet.has(`${langId}-word-${w.id}`)) learnedWords++; });
       });
-      if (catWords.length > 0 && catLearned === catWords.length) categoriesComplete++;
-    });
 
-    // Count sentences
-    const totalSentences = sentenceCounts[langId] || 0;
-    let sentencesDone = 0;
-    try {
-      const items: string[] = JSON.parse(localStorage.getItem("tribalLingua_learnedItems") || "[]");
-      sentencesDone = items.filter(id => id.startsWith(`${langId}-sentence-`)).length;
-    } catch { /* */ }
+      const totalSentences = sentenceCounts[langId] || 0;
+      const sentencesDone = items.filter(id => id.startsWith(`${langId}-sentence-`)).length;
+      const totalLetters = alphabetCounts[langId] || 0;
+      const lettersDone = items.filter(id => id.startsWith(`${langId}-letter-`)).length;
 
-    // Count letters
-    const totalLetters = alphabetCounts[langId] || 0;
-    let lettersDone = 0;
-    try {
-      const items: string[] = JSON.parse(localStorage.getItem("tribalLingua_learnedItems") || "[]");
-      lettersDone = items.filter(id => id.startsWith(`${langId}-letter-`)).length;
-    } catch { /* */ }
-
-    const totalItems = totalWords + totalSentences + totalLetters;
-    const learnedItems = learnedWords + sentencesDone + lettersDone;
-    const percent = totalItems > 0 ? Math.round((learnedItems / totalItems) * 100) : 0;
-
-    return { totalItems, learnedItems, percent, categoriesComplete, totalCategories: categories.length, sentencesDone, totalSentences, lettersDone, totalLetters };
+      const totalItems = totalWords + totalSentences + totalLetters;
+      const learnedItems = learnedWords + sentencesDone + lettersDone;
+      return { totalItems, learnedItems, percent: totalItems > 0 ? Math.round((learnedItems / totalItems) * 100) : 0 };
+    } catch {
+      return { totalItems: 0, learnedItems: 0, percent: 0 };
+    }
   }, [assignedClan, totalLearned]);
 
-  // Milestone thresholds for unlocking path nodes
-  const houseUnlocked = true; // always
-  const questsUnlocked = progressData.percent >= 10;
-  const warUnlocked = progressData.percent >= 40;
-  const elderUnlocked = progressData.percent >= 75;
+  const houseUnlocked = true;
+  const questsUnlocked = progressData.percent >= 10 || prevUnlocks.quests;
+  const warUnlocked = progressData.percent >= 40 || prevUnlocks.war;
+  const elderUnlocked = progressData.percent >= 75 || prevUnlocks.elder;
+
+  // Persist unlock state
+  useEffect(() => {
+    const unlocks: Record<string, boolean> = { ...prevUnlocks };
+    let changed = false;
+    if (questsUnlocked && !unlocks.quests) { unlocks.quests = true; changed = true; }
+    if (warUnlocked && !unlocks.war) { unlocks.war = true; changed = true; }
+    if (elderUnlocked && !unlocks.elder) { unlocks.elder = true; changed = true; }
+    if (changed) {
+      localStorage.setItem("tribalClanUnlocks", JSON.stringify(unlocks));
+      setPrevUnlocks(unlocks);
+      // Show milestone animation for new unlocks
+      if (elderUnlocked && !prevUnlocks.elder) {
+        playUnlockSound();
+        setMilestoneAnim({ show: true, type: "milestone", message: "Elder Chamber Unlocked!" });
+      } else if (warUnlocked && !prevUnlocks.war) {
+        playUnlockSound();
+        setMilestoneAnim({ show: true, type: "milestone", message: "Clan War Unlocked!" });
+      } else if (questsUnlocked && !prevUnlocks.quests) {
+        playUnlockSound();
+        setMilestoneAnim({ show: true, type: "milestone", message: "Clan Quests Unlocked!" });
+      }
+    }
+  }, [questsUnlocked, warUnlocked, elderUnlocked]);
+
+  // Fog opacity based on progress (100% = fully fogged, 0% = clear)
+  const fogOpacity = Math.max(0, 1 - progressData.percent / 100);
 
   return (
-    <div className="min-h-screen pb-24 overflow-hidden relative" style={{ background: "#060d08" }}>
-      {/* Ambient particles */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        {[...Array(25)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              width: `${1 + Math.random() * 2}px`,
-              height: `${1 + Math.random() * 2}px`,
-              background: progressData.percent > 20 ? "#4ade80" : "#1a1a1a",
-              opacity: progressData.percent > 20 ? 0.3 + Math.random() * 0.3 : 0.1,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 3}s`,
-            }}
-          />
-        ))}
-      </div>
+    <div className="min-h-screen pb-24 overflow-hidden relative" style={{ background: "#080f0a" }}>
+      <MilestoneAnimation
+        show={milestoneAnim.show}
+        type={milestoneAnim.type}
+        message={milestoneAnim.message}
+        onComplete={() => setMilestoneAnim(p => ({ ...p, show: false }))}
+      />
 
       {/* INTRO PHASE */}
       {phase === "intro" && (
@@ -164,9 +173,25 @@ const ClanFinder = () => {
           <button onClick={() => navigate(-1)} className="absolute top-6 left-4" style={{ color: "#4ade8088" }}>
             <ArrowLeft className="h-6 w-6" />
           </button>
-          <div className="animate-fade-in-up text-center space-y-6">
+          {/* Mountain backdrop */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute bottom-0 left-0 right-0 h-[60%]" style={{
+              background: "linear-gradient(180deg, transparent 0%, #0a1a0f 30%, #0d2418 60%, #14532d22 100%)"
+            }} />
+            {/* Fog layers */}
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="absolute w-full animate-fog-drift" style={{
+                height: "80px",
+                top: `${20 + i * 25}%`,
+                background: `radial-gradient(ellipse at center, rgba(200,220,210,${0.08 - i * 0.02}), transparent 70%)`,
+                animationDelay: `${i * 2}s`,
+                animationDuration: `${8 + i * 3}s`,
+              }} />
+            ))}
+          </div>
+          <div className="animate-fade-in-up text-center space-y-6 relative z-10">
             <div className="w-28 h-28 mx-auto rounded-full flex items-center justify-center animate-float"
-              style={{ border: "2px solid #22c55e33", background: "radial-gradient(circle, #14532d22, transparent)" }}>
+              style={{ border: "2px solid #22c55e33", background: "radial-gradient(circle, #14532d33, transparent)", boxShadow: "0 0 60px #22c55e11" }}>
               <Sparkles className="w-12 h-12" style={{ color: "#4ade80" }} />
             </div>
             <h1 className="font-heading text-3xl tracking-wide" style={{ color: "#d1fae5" }}>
@@ -176,12 +201,12 @@ const ClanFinder = () => {
               The ancient spirits will guide you through five sacred questions. Answer with your heart — your clan awaits.
             </p>
             <button
-              onClick={() => setPhase("quiz")}
+              onClick={() => { setPhase("quiz"); playScrollSound(); }}
               className="mt-8 px-8 py-4 rounded-xl font-heading text-sm font-semibold tracking-wider uppercase transition-all duration-300 hover:scale-105 active:scale-95"
               style={{
                 background: "linear-gradient(135deg, #166534, #15803d)",
                 color: "#d1fae5",
-                boxShadow: "0 0 40px #22c55e22",
+                boxShadow: "0 0 40px #22c55e22, 0 4px 20px rgba(0,0,0,0.4)",
                 minHeight: 65,
               }}
             >
@@ -194,19 +219,30 @@ const ClanFinder = () => {
       {/* QUIZ PHASE */}
       {phase === "quiz" && (
         <div className="relative z-10 flex flex-col min-h-screen px-5 pt-12 pb-28">
-          <div className="flex items-center justify-center gap-3 mb-10">
+          {/* Fog background */}
+          <div className="absolute inset-0 pointer-events-none">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="absolute w-full animate-fog-drift" style={{
+                height: "100px",
+                top: `${i * 25}%`,
+                background: `radial-gradient(ellipse at center, rgba(200,220,210,${0.06}), transparent 70%)`,
+                animationDelay: `${i * 1.5}s`,
+              }} />
+            ))}
+          </div>
+          <div className="flex items-center justify-center gap-3 mb-10 relative z-10">
             {ritualQuestions.map((_, i) => (
               <div key={i} className="rounded-full transition-all duration-500"
                 style={{
                   width: i === currentQ ? 14 : 10,
                   height: i === currentQ ? 14 : 10,
                   background: i < currentQ ? "#4ade80" : i === currentQ ? "#22c55e" : "#1a2e1f",
-                  boxShadow: i <= currentQ ? "0 0 8px #22c55e44" : "none",
+                  boxShadow: i <= currentQ ? "0 0 12px #22c55e44" : "none",
                 }}
               />
             ))}
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
+          <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full relative z-10">
             <p className="text-xs font-body uppercase tracking-[0.3em] mb-4" style={{ color: "#22c55e55" }}>
               Question {currentQ + 1} of {ritualQuestions.length}
             </p>
@@ -221,10 +257,13 @@ const ClanFinder = () => {
                   disabled={selectedOption !== null}
                   className="w-full text-left px-5 py-4 rounded-xl font-body text-sm transition-all duration-300"
                   style={{
-                    border: `1px solid ${selectedOption === i ? "#22c55e" : "#1a2e1f"}`,
-                    background: selectedOption === i ? "#166534aa" : selectedOption !== null ? "#0a0a0a" : "#0d1f1166",
+                    border: `1px solid ${selectedOption === i ? "#22c55e" : "#1a2e1f55"}`,
+                    background: selectedOption === i
+                      ? "linear-gradient(135deg, #166534aa, #14532daa)"
+                      : selectedOption !== null ? "#0a0a0a44" : "linear-gradient(135deg, #0d1f1144, #0a1a0f44)",
                     color: selectedOption === i ? "#d1fae5" : selectedOption !== null ? "#1a2e1f" : "#86efac99",
-                    boxShadow: selectedOption === i ? "0 0 20px #22c55e33" : "none",
+                    boxShadow: selectedOption === i ? "0 0 30px #22c55e22" : "none",
+                    backdropFilter: "blur(10px)",
                     minHeight: 65,
                   }}
                 >
@@ -242,14 +281,27 @@ const ClanFinder = () => {
         </div>
       )}
 
-      {/* REVEALING PHASE */}
+      {/* REVEALING PHASE — Scroll unfurl animation */}
       {phase === "revealing" && assignedClan && (
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6">
-          <div className="text-center space-y-6">
+          {/* Ambient glow */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-64 h-64 rounded-full" style={{
+              background: `radial-gradient(circle, ${assignedClan.color}33, transparent 70%)`,
+              animation: "glowPulse 2s ease-in-out infinite",
+            }} />
+          </div>
+          <div className="text-center space-y-6 relative z-10">
             {revealStep >= 1 && (
-              <p className="font-body text-sm animate-fade-in-up tracking-widest uppercase" style={{ color: "#22c55e66" }}>
-                The spirits have spoken...
-              </p>
+              <div className="animate-fade-in-up">
+                <p className="font-body text-sm tracking-widest uppercase" style={{ color: "#22c55e66" }}>
+                  The spirits have spoken...
+                </p>
+                {/* Scroll unfurl decoration */}
+                <div className="mt-4 mx-auto w-48 h-1 rounded-full overflow-hidden" style={{ background: "#1a2e1f" }}>
+                  <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${revealStep * 25}%`, background: assignedClan.accentColor }} />
+                </div>
+              </div>
             )}
             {revealStep >= 2 && (
               <div className="w-32 h-32 mx-auto rounded-full flex items-center justify-center text-6xl animate-fade-in-up"
@@ -301,261 +353,154 @@ const ClanFinder = () => {
             </div>
 
             <button
-              onClick={() => setPhase("dashboard")}
+              onClick={() => { setPhase("dashboard"); playUnlockSound(); }}
               className="w-full py-4 rounded-xl font-heading text-sm font-semibold tracking-wider uppercase transition-all duration-300 hover:scale-[1.02] active:scale-95"
               style={{ background: `linear-gradient(135deg, ${assignedClan.color}, ${assignedClan.color}cc)`, color: assignedClan.accentColor, boxShadow: `0 0 30px ${assignedClan.color}33`, minHeight: 65 }}
             >
-              Enter Your Clan House →
+              Enter Your Village →
             </button>
           </div>
         </div>
       )}
 
-      {/* DASHBOARD PHASE — Immersive Forest */}
+      {/* DASHBOARD PHASE — Foggy Tribal Village */}
       {phase === "dashboard" && assignedClan && (
-        <div className="relative z-10 min-h-screen px-5 pt-8 pb-28">
-          <div className="mx-auto max-w-sm">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="font-body text-[10px] uppercase tracking-[0.2em]" style={{ color: `${assignedClan.accentColor}66` }}>Your Clan</p>
-                <h1 className="font-heading text-xl" style={{ color: assignedClan.accentColor }}>{assignedClan.name}</h1>
-              </div>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: `${assignedClan.color}33` }}>
-                {assignedClan.spiritAnimalEmoji}
-              </div>
-            </div>
+        <div className="relative z-10 min-h-screen pb-28">
+          {/* Village Map with fog overlay */}
+          <div className="relative w-full" style={{ height: "55vh", minHeight: 380 }}>
+            <img
+              src={tribalVillageImg}
+              alt="Tribal Village"
+              className="w-full h-full object-cover"
+              style={{ filter: `brightness(${0.6 + progressData.percent * 0.004})` }}
+            />
 
-            {/* Progress summary */}
-            <div className="rounded-xl px-4 py-3 mb-4 flex items-center gap-3" style={{ background: "#0d1f1166", border: "1px solid #1a2e1f" }}>
-              <div className="flex-1">
-                <p className="font-body text-xs" style={{ color: "#86efac88" }}>
-                  {progressData.learnedItems} / {progressData.totalItems} items learned
-                </p>
-                <div className="h-2 rounded-full mt-1.5 overflow-hidden" style={{ background: "#1a2e1f" }}>
-                  <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${progressData.percent}%`, background: `linear-gradient(90deg, ${assignedClan.color}, ${assignedClan.accentColor})` }} />
-                </div>
-              </div>
-              <span className="font-heading text-lg" style={{ color: assignedClan.accentColor }}>{progressData.percent}%</span>
-            </div>
+            {/* Fog overlay — clears as user progresses */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              background: `linear-gradient(180deg, 
+                rgba(8,15,10,${fogOpacity * 0.95}) 0%,
+                rgba(15,25,18,${fogOpacity * 0.85}) 30%,
+                rgba(20,35,25,${fogOpacity * 0.7}) 60%,
+                rgba(8,15,10,${fogOpacity * 0.9}) 100%)`,
+            }} />
 
-            {/* THE FOREST PATH — Full immersive SVG */}
-            <div className="relative rounded-2xl overflow-hidden mb-5" style={{ height: 440, border: "1px solid #1a2e1f" }}>
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 440" preserveAspectRatio="xMidYMid slice">
-                {/* Dark soil / ground gradient */}
-                <defs>
-                  <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#030a05" />
-                    <stop offset="100%" stopColor="#0a1a0f" />
-                  </linearGradient>
-                  <linearGradient id="forestReveal" x1="0" y1="1" x2="0" y2="0">
-                    <stop offset="0%" stopColor={progressData.percent > 5 ? "#0d3320" : "#0a0a0a"} />
-                    <stop offset={`${Math.min(progressData.percent, 100)}%`} stopColor={progressData.percent > 5 ? "#166534" : "#0a0a0a"} />
-                    <stop offset={`${Math.min(progressData.percent + 3, 100)}%`} stopColor="#0a0a0a" />
-                    <stop offset="100%" stopColor="#0a0a0a" />
-                  </linearGradient>
-                  <filter id="treeglow">
-                    <feGaussianBlur stdDeviation="4" result="blur" />
-                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                  </filter>
-                  <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor={assignedClan.accentColor} stopOpacity="0.4" />
-                    <stop offset="100%" stopColor={assignedClan.accentColor} stopOpacity="0" />
-                  </radialGradient>
-                </defs>
+            {/* Animated fog wisps */}
+            {fogOpacity > 0.1 && [...Array(5)].map((_, i) => (
+              <div key={i} className="absolute w-full animate-fog-drift pointer-events-none" style={{
+                height: "60px",
+                top: `${10 + i * 18}%`,
+                background: `radial-gradient(ellipse at center, rgba(180,200,190,${fogOpacity * 0.12}), transparent 60%)`,
+                animationDelay: `${i * 2.5}s`,
+                animationDuration: `${10 + i * 3}s`,
+              }} />
+            ))}
 
-                <rect width="400" height="440" fill="url(#groundGrad)" />
+            {/* Fireflies on revealed areas */}
+            {progressData.percent > 5 && [...Array(10)].map((_, i) => (
+              <div key={i} className="absolute rounded-full animate-glow-pulse pointer-events-none"
+                style={{
+                  width: "3px", height: "3px",
+                  background: "#7dffb3",
+                  left: `${15 + Math.random() * 70}%`,
+                  top: `${20 + Math.random() * 60}%`,
+                  animationDelay: `${Math.random() * 4}s`,
+                  animationDuration: `${2 + Math.random() * 3}s`,
+                  opacity: (1 - fogOpacity) * 0.7,
+                }}
+              />
+            ))}
 
-                {/* Tree silhouettes — dark when locked, green when unlocked */}
-                {[
-                  { x: 30, h: 80, base: 400 }, { x: 70, h: 100, base: 390 }, { x: 120, h: 60, base: 410 },
-                  { x: 330, h: 90, base: 395 }, { x: 370, h: 70, base: 405 }, { x: 280, h: 85, base: 398 },
-                  { x: 50, h: 75, base: 300 }, { x: 350, h: 65, base: 310 },
-                  { x: 40, h: 70, base: 200 }, { x: 360, h: 80, base: 210 },
-                  { x: 60, h: 90, base: 100 }, { x: 340, h: 75, base: 110 },
-                  { x: 30, h: 60, base: 50 }, { x: 370, h: 70, base: 40 },
-                ].map((tree, i) => {
-                  const treeProgress = ((440 - tree.base) / 440) * 100;
-                  const isGreen = treeProgress < progressData.percent;
-                  return (
-                    <g key={i}>
-                      {/* Trunk */}
-                      <rect x={tree.x - 3} y={tree.base - tree.h * 0.3} width={6} height={tree.h * 0.3} fill={isGreen ? "#1a3a22" : "#111"} />
-                      {/* Canopy layers */}
-                      <polygon
-                        points={`${tree.x},${tree.base - tree.h} ${tree.x - tree.h * 0.35},${tree.base - tree.h * 0.3} ${tree.x + tree.h * 0.35},${tree.base - tree.h * 0.3}`}
-                        fill={isGreen ? "#14532d" : "#0d0d0d"}
-                        opacity={isGreen ? 0.8 : 0.3}
-                      />
-                      <polygon
-                        points={`${tree.x},${tree.base - tree.h * 0.8} ${tree.x - tree.h * 0.28},${tree.base - tree.h * 0.35} ${tree.x + tree.h * 0.28},${tree.base - tree.h * 0.35}`}
-                        fill={isGreen ? "#166534" : "#111"}
-                        opacity={isGreen ? 0.7 : 0.2}
-                      />
-                    </g>
-                  );
-                })}
+            {/* Interactive village elements overlaid on the image */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              {/* Central bonfire — always visible */}
+              <button
+                onClick={() => { navigate(`/learn/${assignedClan.languageId}`); playFireSound(); }}
+                className="absolute text-3xl transition-transform hover:scale-125 active:scale-95"
+                style={{ top: "45%", left: "50%", transform: "translate(-50%,-50%)", filter: `opacity(${Math.max(0.3, 1 - fogOpacity * 0.5)})` }}
+                title="Learn"
+              >
+                🔥
+              </button>
 
-                {/* Main path — S-curve from bottom to top */}
-                <path
-                  d="M200,430 C160,380 240,340 200,300 C160,260 240,220 200,180 C160,140 240,100 200,60 C180,30 200,10 200,10"
-                  stroke="url(#forestReveal)"
-                  strokeWidth="8"
-                  fill="none"
-                  strokeLinecap="round"
-                  filter="url(#treeglow)"
-                />
-                {/* Path border glow */}
-                <path
-                  d="M200,430 C160,380 240,340 200,300 C160,260 240,220 200,180 C160,140 240,100 200,60 C180,30 200,10 200,10"
-                  stroke={assignedClan.color}
-                  strokeWidth="1"
-                  fill="none"
-                  strokeLinecap="round"
-                  opacity={0.15}
-                />
-
-                {/* Path nodes */}
-                {[
-                  { cx: 200, cy: 410, unlocked: houseUnlocked },
-                  { cx: 220, cy: 300, unlocked: questsUnlocked },
-                  { cx: 180, cy: 190, unlocked: warUnlocked },
-                  { cx: 200, cy: 50, unlocked: elderUnlocked },
-                ].map((node, i) => (
-                  <g key={i}>
-                    {node.unlocked && <circle cx={node.cx} cy={node.cy} r={24} fill="url(#nodeGlow)" />}
-                    <circle
-                      cx={node.cx} cy={node.cy}
-                      r={node.unlocked ? 14 : 10}
-                      fill={node.unlocked ? assignedClan.color : "#111"}
-                      stroke={node.unlocked ? assignedClan.accentColor : "#222"}
-                      strokeWidth={node.unlocked ? 2.5 : 1.5}
-                    />
-                    {node.unlocked && (
-                      <circle cx={node.cx} cy={node.cy} r={5} fill={assignedClan.accentColor}>
-                        <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" />
-                      </circle>
-                    )}
-                  </g>
-                ))}
-
-                {/* Fireflies scattered on unlocked area */}
-                {progressData.percent > 5 && [...Array(12)].map((_, i) => {
-                  const fy = 430 - (i * 35);
-                  const fx = 100 + Math.sin(i * 1.7) * 100 + Math.random() * 60;
-                  const visible = ((440 - fy) / 440) * 100 < progressData.percent;
-                  if (!visible) return null;
-                  return (
-                    <circle key={i} cx={fx} cy={fy} r={1.5} fill="#7dffb3" opacity={0.5}>
-                      <animate attributeName="opacity" values="0.2;0.7;0.2" dur={`${2 + (i % 4)}s`} repeatCount="indefinite" />
-                      <animate attributeName="cy" values={`${fy};${fy - 3};${fy}`} dur={`${3 + (i % 3)}s`} repeatCount="indefinite" />
-                    </circle>
-                  );
-                })}
-              </svg>
-
-              {/* Node labels overlay */}
+              {/* Village elements unlocked by progress */}
               {[
-                { x: "60%", y: "91%", label: "Clan House", icon: "🏠", unlocked: houseUnlocked, desc: "Your home base" },
-                { x: "62%", y: "66%", label: "Quests", icon: "⚔️", unlocked: questsUnlocked, desc: "10% to unlock" },
-                { x: "14%", y: "41%", label: "Clan War", icon: "🔥", unlocked: warUnlocked, desc: "40% to unlock" },
-                { x: "58%", y: "9%", label: "Elder Chamber", icon: "👁️", unlocked: elderUnlocked, desc: "75% to unlock" },
-              ].map((node, i) => (
-                <div
+                { emoji: "🏠", label: "Clan House", top: "65%", left: "25%", unlocked: houseUnlocked, action: () => navigate(`/learn/${assignedClan.languageId}`) },
+                { emoji: "⚔️", label: "Quests", top: "30%", left: "72%", unlocked: questsUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
+                { emoji: "🏺", label: "Clan War", top: "20%", left: "28%", unlocked: warUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
+                { emoji: "👁️", label: "Elder", top: "12%", left: "50%", unlocked: elderUnlocked, action: () => navigate("/elder") },
+                { emoji: "📜", label: "Scrolls", top: "72%", left: "70%", unlocked: houseUnlocked, action: () => navigate(`/folkvault/${assignedClan.languageId}`) },
+                { emoji: "🗿", label: "Stones", top: "55%", left: "18%", unlocked: progressData.percent >= 20, action: () => navigate(`/history/${assignedClan.languageId}`) },
+              ].map((el, i) => (
+                <button
                   key={i}
-                  className="absolute flex items-center gap-1.5 font-body"
-                  style={{ left: node.x, top: node.y, transform: "translateY(-50%)" }}
+                  onClick={() => { if (el.unlocked) { playTapSound(); el.action(); } }}
+                  className={`absolute text-2xl transition-all duration-300 ${el.unlocked ? "hover:scale-125 active:scale-95" : "grayscale opacity-20"}`}
+                  style={{
+                    top: el.top, left: el.left,
+                    transform: "translate(-50%,-50%)",
+                    filter: el.unlocked ? `drop-shadow(0 0 8px rgba(74,222,128,0.4))` : "none",
+                  }}
+                  disabled={!el.unlocked}
+                  title={el.unlocked ? el.label : `${el.label} (Locked)`}
                 >
-                  <span className="text-base">{node.icon}</span>
-                  <div>
-                    <p className="text-xs font-semibold" style={{ color: node.unlocked ? "#d1fae5" : "#1a2e1f" }}>
-                      {node.label}
-                    </p>
-                    {!node.unlocked && (
-                      <p className="text-[9px] flex items-center gap-0.5" style={{ color: "#1a3a2266" }}>
-                        <Lock className="w-2.5 h-2.5" /> {node.desc}
-                      </p>
-                    )}
-                    {node.unlocked && (
-                      <p className="text-[9px] flex items-center gap-0.5" style={{ color: "#22c55e66" }}>
-                        <Unlock className="w-2.5 h-2.5" /> Unlocked
-                      </p>
-                    )}
-                  </div>
-                </div>
+                  {el.emoji}
+                  <span className="block text-[8px] font-body font-semibold mt-0.5"
+                    style={{ color: el.unlocked ? "#d1fae5" : "#1a2e1f" }}>
+                    {el.label}
+                  </span>
+                  {!el.unlocked && <Lock className="w-3 h-3 mx-auto mt-0.5" style={{ color: "#1a3a22" }} />}
+                </button>
               ))}
             </div>
 
-            {/* Quick Actions */}
-            <div className="space-y-3">
-              <button
-                onClick={() => navigate(`/learn/${assignedClan.languageId}`)}
-                className="w-full flex items-center gap-4 rounded-xl p-4 transition-all active:scale-[0.98]"
-                style={{ background: "#0d1f1166", border: "1px solid #1a2e1f", minHeight: 65 }}
-              >
-                <span className="text-2xl">📖</span>
-                <div className="flex-1 text-left">
-                  <p className="font-heading text-sm" style={{ color: "#d1fae5" }}>Learn {assignedClan.language}</p>
-                  <p className="font-body text-xs" style={{ color: "#22c55e55" }}>
-                    Words · Letters · Phrases
-                  </p>
+            {/* Progress badge overlay */}
+            <div className="absolute top-4 left-4 right-4 flex items-center gap-3 rounded-xl px-3 py-2"
+              style={{ background: "rgba(8,15,10,0.85)", backdropFilter: "blur(10px)", border: "1px solid #1a2e1f" }}>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl" style={{ background: `${assignedClan.color}33` }}>
+                {assignedClan.spiritAnimalEmoji}
+              </div>
+              <div className="flex-1">
+                <p className="font-heading text-xs" style={{ color: "#d1fae5" }}>{assignedClan.name}</p>
+                <div className="h-1.5 rounded-full mt-1 overflow-hidden" style={{ background: "#1a2e1f" }}>
+                  <div className="h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${progressData.percent}%`, background: `linear-gradient(90deg, ${assignedClan.color}, ${assignedClan.accentColor})` }} />
                 </div>
-                <ChevronRight className="w-4 h-4" style={{ color: "#166534" }} />
-              </button>
-
-              <button
-                onClick={() => navigate(`/quiz/${assignedClan.languageId}`)}
-                className={`w-full flex items-center gap-4 rounded-xl p-4 transition-all ${questsUnlocked ? "active:scale-[0.98]" : "opacity-40"}`}
-                style={{ background: "#0d1f1166", border: "1px solid #1a2e1f", minHeight: 65 }}
-                disabled={!questsUnlocked}
-              >
-                <span className="text-2xl">⚔️</span>
-                <div className="flex-1 text-left">
-                  <p className="font-heading text-sm" style={{ color: questsUnlocked ? "#d1fae5" : "#1a2e1f" }}>Clan Quests</p>
-                  <p className="font-body text-xs" style={{ color: "#22c55e55" }}>
-                    {questsUnlocked ? "Test your skills" : "Learn 10% to unlock"}
-                  </p>
-                </div>
-                {questsUnlocked ? <ChevronRight className="w-4 h-4" style={{ color: "#166534" }} /> : <Lock className="w-4 h-4" style={{ color: "#1a2e1f" }} />}
-              </button>
-
-              <button
-                onClick={() => navigate(`/folkvault/${assignedClan.languageId}`)}
-                className="w-full flex items-center gap-4 rounded-xl p-4 transition-all active:scale-[0.98]"
-                style={{ background: "#0d1f1166", border: "1px solid #1a2e1f", minHeight: 65 }}
-              >
-                <span className="text-2xl">📜</span>
-                <div className="flex-1 text-left">
-                  <p className="font-heading text-sm" style={{ color: "#d1fae5" }}>Clan Stories</p>
-                  <p className="font-body text-xs" style={{ color: "#22c55e55" }}>Tales of your people</p>
-                </div>
-                <ChevronRight className="w-4 h-4" style={{ color: "#166534" }} />
-              </button>
-
-              <button
-                onClick={() => elderUnlocked && navigate("/elder")}
-                className={`w-full flex items-center gap-4 rounded-xl p-4 transition-all ${elderUnlocked ? "active:scale-[0.98]" : "opacity-40"}`}
-                style={{ background: "#0d1f1166", border: "1px solid #1a2e1f", minHeight: 65 }}
-                disabled={!elderUnlocked}
-              >
-                <span className="text-2xl">👁️</span>
-                <div className="flex-1 text-left">
-                  <p className="font-heading text-sm" style={{ color: elderUnlocked ? "#d1fae5" : "#1a2e1f" }}>Elder Chamber</p>
-                  <p className="font-body text-xs" style={{ color: "#22c55e55" }}>
-                    {elderUnlocked ? "Speak with the Glyph-Guard" : "Learn 75% to unlock"}
-                  </p>
-                </div>
-                {elderUnlocked ? <ChevronRight className="w-4 h-4" style={{ color: "#166534" }} /> : <Lock className="w-4 h-4" style={{ color: "#1a2e1f" }} />}
-              </button>
-
-              <button
-                onClick={resetClan}
-                className="w-full text-center py-3 font-body text-xs transition-colors"
-                style={{ color: "#1a3a2266" }}
-              >
-                Retake the Clan Ritual
-              </button>
+              </div>
+              <span className="font-heading text-sm" style={{ color: assignedClan.accentColor }}>{progressData.percent}%</span>
             </div>
+          </div>
+
+          {/* Action buttons below the map */}
+          <div className="px-5 pt-4 space-y-2 max-w-lg mx-auto">
+            <p className="text-center font-body text-xs mb-2" style={{ color: "#4ade8066" }}>
+              {fogOpacity > 0.5 ? "🌫️ Learn words to clear the fog and reveal the village" : fogOpacity > 0.1 ? "🌿 The village emerges from the mist..." : "✨ Your village is revealed!"}
+            </p>
+
+            {[
+              { icon: "📖", label: `Learn ${assignedClan.language}`, desc: "Words · Letters · Phrases", unlocked: true, action: () => navigate(`/learn/${assignedClan.languageId}`) },
+              { icon: "⚔️", label: "Clan Quests", desc: questsUnlocked ? "Test your skills" : "10% to unlock", unlocked: questsUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
+              { icon: "📜", label: "Clan Stories", desc: "Tales of your people", unlocked: true, action: () => navigate(`/folkvault/${assignedClan.languageId}`) },
+              { icon: "👁️", label: "Elder Chamber", desc: elderUnlocked ? "Speak with the Glyph-Guard" : "75% to unlock", unlocked: elderUnlocked, action: () => navigate("/elder") },
+            ].map((item, i) => (
+              <button
+                key={i}
+                onClick={() => { if (item.unlocked) { playTapSound(); item.action(); } }}
+                className={`w-full flex items-center gap-4 rounded-xl p-4 transition-all ${item.unlocked ? "active:scale-[0.98]" : "opacity-40"}`}
+                style={{ background: "rgba(13,31,17,0.5)", border: "1px solid #1a2e1f", backdropFilter: "blur(5px)", minHeight: 60 }}
+                disabled={!item.unlocked}
+              >
+                <span className="text-xl">{item.icon}</span>
+                <div className="flex-1 text-left">
+                  <p className="font-heading text-sm" style={{ color: item.unlocked ? "#d1fae5" : "#1a2e1f" }}>{item.label}</p>
+                  <p className="font-body text-[11px]" style={{ color: "#22c55e55" }}>{item.desc}</p>
+                </div>
+                {item.unlocked ? <ChevronRight className="w-4 h-4" style={{ color: "#166534" }} /> : <Lock className="w-4 h-4" style={{ color: "#1a2e1f" }} />}
+              </button>
+            ))}
+
+            <button onClick={resetClan} className="w-full text-center py-3 font-body text-xs" style={{ color: "#1a3a2244" }}>
+              Retake the Clan Ritual
+            </button>
           </div>
         </div>
       )}
