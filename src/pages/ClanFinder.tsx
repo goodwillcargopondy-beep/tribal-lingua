@@ -162,7 +162,7 @@ const ClanFinder = () => {
   const fogOpacity = Math.max(0, 1 - progressData.percent / 100);
 
   return (
-    <div className="min-h-screen pb-24 overflow-hidden relative" style={{ background: "#080f0a" }}>
+    <div className="min-h-screen pb-24 overflow-hidden relative" style={{ background: "linear-gradient(180deg, #1a2530 0%, #0f1820 50%, #0a1015 100%)" }}>
       <MilestoneAnimation
         show={milestoneAnim.show}
         type={milestoneAnim.type}
@@ -363,23 +363,23 @@ const ClanFinder = () => {
                 rgba(8,15,10,${fogOpacity * 0.9}) 100%)`,
             }} />
 
-            {/* Animated fog wisps */}
-            {fogOpacity > 0.1 && [...Array(5)].map((_, i) => (
+            {/* Animated mist wisps — subtle */}
+            {fogOpacity > 0.05 && [...Array(6)].map((_, i) => (
               <div key={i} className="absolute w-full animate-fog-drift pointer-events-none" style={{
-                height: "60px",
-                top: `${10 + i * 18}%`,
-                background: `radial-gradient(ellipse at center, rgba(180,200,190,${fogOpacity * 0.12}), transparent 60%)`,
-                animationDelay: `${i * 2.5}s`,
-                animationDuration: `${10 + i * 3}s`,
+                height: "70px",
+                top: `${5 + i * 16}%`,
+                background: `radial-gradient(ellipse at center, rgba(200,215,225,${fogOpacity * 0.18}), transparent 65%)`,
+                animationDelay: `${i * 2.2}s`,
+                animationDuration: `${11 + i * 2.5}s`,
               }} />
             ))}
 
-            {/* Fireflies on revealed areas */}
-            {progressData.percent > 5 && [...Array(10)].map((_, i) => (
+            {/* Fireflies on revealed areas — soft */}
+            {progressData.percent > 5 && [...Array(8)].map((_, i) => (
               <div key={i} className="absolute rounded-full animate-glow-pulse pointer-events-none"
                 style={{
                   width: "3px", height: "3px",
-                  background: "#7dffb3",
+                  background: "#cfe9d2",
                   left: `${15 + Math.random() * 70}%`,
                   top: `${20 + Math.random() * 60}%`,
                   animationDelay: `${Math.random() * 4}s`,
@@ -389,45 +389,35 @@ const ClanFinder = () => {
               />
             ))}
 
-            {/* Interactive village elements overlaid on the image */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              {/* Central bonfire — always visible */}
-              <button
-                onClick={() => { navigate(`/learn/${assignedClan.languageId}`); playFireSound(); }}
-                className="absolute text-3xl transition-transform hover:scale-125 active:scale-95"
-                style={{ top: "45%", left: "50%", transform: "translate(-50%,-50%)", filter: `opacity(${Math.max(0.3, 1 - fogOpacity * 0.5)})` }}
-                title="Learn"
-              >
-                🔥
-              </button>
-
-              {/* Village elements unlocked by progress */}
+            {/* Invisible interactive hotspots over the village image — no emoji clutter */}
+            <div className="absolute inset-0">
               {[
-                { emoji: "🏠", label: "Clan House", top: "65%", left: "25%", unlocked: houseUnlocked, action: () => navigate(`/learn/${assignedClan.languageId}`) },
-                { emoji: "⚔️", label: "Quests", top: "30%", left: "72%", unlocked: questsUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
-                { emoji: "🏺", label: "Clan War", top: "20%", left: "28%", unlocked: warUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
-                { emoji: "👁️", label: "Elder", top: "12%", left: "50%", unlocked: elderUnlocked, action: () => navigate("/elder") },
-                { emoji: "📜", label: "Scrolls", top: "72%", left: "70%", unlocked: houseUnlocked, action: () => navigate(`/folkvault/${assignedClan.languageId}`) },
-                { emoji: "🗿", label: "Stones", top: "55%", left: "18%", unlocked: progressData.percent >= 20, action: () => navigate(`/history/${assignedClan.languageId}`) },
+                { label: "Clan House", top: "62%", left: "30%", unlocked: houseUnlocked, action: () => navigate(`/learn/${assignedClan.languageId}`) },
+                { label: "Bonfire", top: "48%", left: "52%", unlocked: houseUnlocked, action: () => { navigate(`/learn/${assignedClan.languageId}`); playFireSound(); } },
+                { label: "Quests", top: "32%", left: "70%", unlocked: questsUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
+                { label: "Clan War", top: "22%", left: "30%", unlocked: warUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
+                { label: "Elder", top: "14%", left: "52%", unlocked: elderUnlocked, action: () => navigate("/elder") },
+                { label: "Scrolls", top: "70%", left: "70%", unlocked: houseUnlocked, action: () => navigate(`/folkvault/${assignedClan.languageId}`) },
+                { label: "Stones", top: "55%", left: "18%", unlocked: progressData.percent >= 20, action: () => navigate(`/history/${assignedClan.languageId}`) },
               ].map((el, i) => (
                 <button
                   key={i}
                   onClick={() => { if (el.unlocked) { playTapSound(); el.action(); } }}
-                  className={`absolute text-2xl transition-all duration-300 ${el.unlocked ? "hover:scale-125 active:scale-95" : "grayscale opacity-20"}`}
+                  className={`absolute rounded-full transition-all ${el.unlocked ? "active:scale-90" : ""}`}
                   style={{
                     top: el.top, left: el.left,
                     transform: "translate(-50%,-50%)",
-                    filter: el.unlocked ? `drop-shadow(0 0 8px rgba(74,222,128,0.4))` : "none",
+                    width: 44, height: 44,
+                    background: el.unlocked
+                      ? `radial-gradient(circle, ${assignedClan.color}55, transparent 70%)`
+                      : "transparent",
+                    border: el.unlocked ? `1px solid ${assignedClan.accentColor}66` : "1px dashed rgba(180,200,210,0.15)",
+                    boxShadow: el.unlocked ? `0 0 16px ${assignedClan.accentColor}44` : "none",
                   }}
                   disabled={!el.unlocked}
                   title={el.unlocked ? el.label : `${el.label} (Locked)`}
                 >
-                  {el.emoji}
-                  <span className="block text-[8px] font-body font-semibold mt-0.5"
-                    style={{ color: el.unlocked ? "#d1fae5" : "#1a2e1f" }}>
-                    {el.label}
-                  </span>
-                  {!el.unlocked && <Lock className="w-3 h-3 mx-auto mt-0.5" style={{ color: "#1a3a22" }} />}
+                  {!el.unlocked && <Lock className="w-3 h-3 mx-auto" style={{ color: "rgba(200,215,225,0.4)" }} />}
                 </button>
               ))}
             </div>
