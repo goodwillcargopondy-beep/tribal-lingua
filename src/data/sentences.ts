@@ -74,3 +74,26 @@ export const kurukhSentences: Sentence[] = [
   { id: "ks19", tribal: "हमारे खेत में धान है", pronunciation: "Hamare khet mein dhaan hai", english: "There is paddy in our field", category: "daily" },
   { id: "ks20", tribal: "उराँव संस्कृति बहुत महान है", pronunciation: "Oraon sanskriti bahut mahaan hai", english: "Oraon culture is very great", category: "culture" },
 ];
+
+export const todaSentences: Sentence[] = [
+  { id: "ts1", tribal: "வணக்கம்! எப்படி இருக்கீங்க?", pronunciation: "Vanakkam! Eppadi irukkeenga?", english: "Hello! How are you?", category: "greetings" },
+  { id: "ts2", tribal: "நான் நல்லா இருக்கேன், நன்றி", pronunciation: "Naan nallaa irukken, nandri", english: "I am fine, thank you", category: "greetings" },
+  { id: "ts3", tribal: "உங்க பேரு என்ன?", pronunciation: "Unga peru enna?", english: "What is your name?", category: "greetings" },
+  { id: "ts4", tribal: "என் பேரு...", pronunciation: "En peru...", english: "My name is...", category: "greetings" },
+  { id: "ts5", tribal: "நீங்க எங்கருந்து வந்தீங்க?", pronunciation: "Neenga engerundhu vandheenga?", english: "Where are you from?", category: "conversation" },
+  { id: "ts6", tribal: "நான் நீலகிரியில் இருக்கேன்", pronunciation: "Naan Neelagiriyil irukken", english: "I live in the Nilgiris", category: "conversation" },
+  { id: "ts7", tribal: "தோடா மொழி கத்துக்கறேன்", pronunciation: "Toda mozhi katthukkaren", english: "I am learning the Toda language", category: "learning" },
+  { id: "ts8", tribal: "சாப்பிடுங்க", pronunciation: "Saappidunga", english: "Please eat", category: "daily" },
+  { id: "ts9", tribal: "போய்வரேன்", pronunciation: "Poivaren", english: "Goodbye (I'll go and come)", category: "greetings" },
+  { id: "ts10", tribal: "இன்னைக்கு நல்ல நாள்", pronunciation: "Innaikku nalla naal", english: "Today is a good day", category: "daily" },
+  { id: "ts11", tribal: "எருமைகள் காட்டில் இருக்கு", pronunciation: "Erumaikal kaattil irukku", english: "The buffaloes are in the forest", category: "daily" },
+  { id: "ts12", tribal: "மோட் பண்டிகை மிகவும் புனிதம்", pronunciation: "Modh pandigai migavum punitham", english: "The Modh festival is very sacred", category: "culture" },
+  { id: "ts13", tribal: "கோயிலில் பால் காணிக்கை", pronunciation: "Koyilil paal kaanikkai", english: "Milk offering at the dairy temple", category: "culture" },
+  { id: "ts14", tribal: "எனக்கு புரியலை", pronunciation: "Enakku puriyalai", english: "I don't understand", category: "learning" },
+  { id: "ts15", tribal: "மழை பெய்யுது", pronunciation: "Mazhai peyyudhu", english: "It is raining", category: "daily" },
+  { id: "ts16", tribal: "மலையில் ஏறுவோம்", pronunciation: "Malaiyil eruvom", english: "Let's climb the mountain", category: "daily" },
+  { id: "ts17", tribal: "நாங்க ஒன்றா பாடுவோம்", pronunciation: "Naanga ondraa paaduvom", english: "We will sing together", category: "culture" },
+  { id: "ts18", tribal: "எருமை பாலை குடிங்க", pronunciation: "Erumai paalai kudinga", english: "Drink the buffalo milk", category: "daily" },
+  { id: "ts19", tribal: "மண்டு எங்கள் வீடு", pronunciation: "Mund engal veedu", english: "The hamlet is our home", category: "daily" },
+  { id: "ts20", tribal: "தோடா கலாச்சாரம் மிக பழமையானது", pronunciation: "Toda kalaachaaram miga pazhamaiyaanadhu", english: "Toda culture is very ancient", category: "culture" },
+];

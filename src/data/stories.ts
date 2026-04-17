@@ -965,9 +965,139 @@ const kurukhRaw = [
   },
 ];
 
+// ===== TODA STORIES =====
+const todaRaw = [
+  {
+    id: "t1", title: "The Sacred Buffalo (Eru Kadhai)", language: "Toda", emoji: "🐃",
+    excerpt: "How the Toda people received the sacred buffalo from the goddess Teikirzi.",
+    tribalLines: [
+      "மிக பழைய காலத்தில், தோடா மக்கள் நீலகிரி மலையில் வாழ்ந்தார்கள்.",
+      "தெய்க்கிர்ழி தேவி அவர்களுக்கு சிறப்பு பரிசை கொடுக்க முடிவு செய்தாள்.",
+      "அவள் ஒரு பெரிய எருமையை உருவாக்கினாள்.",
+      "அந்த எருமை வெள்ளை பால் கொடுத்தது.",
+      "தோடா மக்கள் அந்த பாலை வழிபாடு செய்தார்கள்.",
+    ],
+    englishLines: [
+      "Long ago, the Toda people lived in the Nilgiri mountains.",
+      "The goddess Teikirzi decided to give them a special gift.",
+      "She created a great buffalo.",
+      "The buffalo gave white milk.",
+      "The Toda people worshipped that milk.",
+    ],
+    pronunciationLines: [
+      "Miga pazhaiya kaalathil, Toda makkal Neelagiri malaiyil vaazhndhaargal.",
+      "Teikirzi devi avargalukku sirappu parisai koduka mudivu seidhaal.",
+      "Aval oru periya erumaiyai uruvaakkinaal.",
+      "Andha erumai vellai paal koduthadhu.",
+      "Toda makkal andha paalai vazhipaadu seidhaargal.",
+    ],
+  },
+  {
+    id: "t2", title: "The Dairy Priest (Palaadi Pujari)", language: "Toda", emoji: "🥛",
+    excerpt: "The story of the first dairy priest who learned the sacred chants.",
+    tribalLines: [
+      "ஒரு இளைஞன் கோயிலுக்குள் நுழைய விரும்பினான்.",
+      "ஆனால் அவன் சாமி பாடல்களை அறியவில்லை.",
+      "மலையின் ஆவி அவனுக்கு கனவில் வந்தது.",
+      "ஆவி அவனுக்கு புனித பாடல்களை கற்றுக்கொடுத்தது.",
+      "அன்றிலிருந்து அவன் முதல் பால் பூசாரியானான்.",
+    ],
+    englishLines: [
+      "A young man wished to enter the dairy temple.",
+      "But he did not know the sacred chants.",
+      "The spirit of the mountain came to him in a dream.",
+      "The spirit taught him the sacred songs.",
+      "From that day he became the first dairy priest.",
+    ],
+    pronunciationLines: [
+      "Oru ilaignyan koyilukkul nuzhaiya virumbinaan.",
+      "Aanaal avan saami paadalgalai ariyavillai.",
+      "Malaiyin aavi avanukku kanavil vandhadhu.",
+      "Aavi avanukku punitha paadalgalai katrukoduthadhu.",
+      "Andriliriundhu avan mudhal paal poosaariyaanaan.",
+    ],
+  },
+  {
+    id: "t3", title: "The Mountain of Songs (Paattu Malai)", language: "Toda", emoji: "⛰️",
+    excerpt: "How the Toda received their gift of poetry and song.",
+    tribalLines: [
+      "நீலகிரி மலையில் ஒரு பாடல் ஆவி வாழ்ந்தது.",
+      "அந்த ஆவி தோடா மக்களுக்கு பாட்டு கற்றுக்கொடுத்தது.",
+      "ஒவ்வொரு பாடலும் ஒரு மலையை குறிக்கும்.",
+      "ஒவ்வொரு வார்த்தையும் ஒரு ஆற்றை வாழ்த்தும்.",
+      "இன்றும் அவை மண்டுகளில் பாடப்படுகின்றன.",
+    ],
+    englishLines: [
+      "On the Nilgiri mountain lived a song spirit.",
+      "That spirit taught songs to the Toda people.",
+      "Each song names a mountain.",
+      "Each word blesses a river.",
+      "Today they are still sung in the hamlets.",
+    ],
+    pronunciationLines: [
+      "Neelagiri malaiyil oru paadal aavi vaazhndhadhu.",
+      "Andha aavi Toda makkalukku paattu katrukoduthadhu.",
+      "Ovvoru paadalum oru malaiyai kurikkum.",
+      "Ovvoru vaarthaiyum oru aatrai vaazhthum.",
+      "Indrum avai mundugalil paadappadukindrana.",
+    ],
+  },
+  {
+    id: "t4", title: "The Embroidered Shawl (Pukhoor)", language: "Toda", emoji: "🧵",
+    excerpt: "The legend of the first Toda embroidery and its sacred patterns.",
+    tribalLines: [
+      "ஒரு பெண் தனது குழந்தைக்கு ஒரு துணி தைத்தாள்.",
+      "அவள் அதில் சிவப்பு மற்றும் கருப்பு கோடுகளை எழுதினாள்.",
+      "ஒவ்வொரு கோடும் ஒரு மரத்தை குறித்தது.",
+      "ஒவ்வொரு வடிவமும் ஒரு கதையை சொன்னது.",
+      "அந்த துணி இன்று புக்கூர் என்று அறியப்படுகிறது.",
+    ],
+    englishLines: [
+      "A woman stitched a cloth for her child.",
+      "She wrote red and black lines on it.",
+      "Each line marked a tree.",
+      "Each pattern told a story.",
+      "That cloth is today known as Pukhoor.",
+    ],
+    pronunciationLines: [
+      "Oru penn thanadhu kuzhandhaikku oru thuni thaithaal.",
+      "Aval adhil sivappu matrum karuppu kodugalai ezhuthinaal.",
+      "Ovvoru kodum oru maraththai kurithadhu.",
+      "Ovvoru vadivamum oru kadhaiyai sondadhu.",
+      "Andha thuni indru Pukhoor endru ariyappadugiradhu.",
+    ],
+  },
+  {
+    id: "t5", title: "The Modh Festival (Modh Pandigai)", language: "Toda", emoji: "🎉",
+    excerpt: "The story of how the Modh migration festival began.",
+    tribalLines: [
+      "ஒரு வருடம் காடு வறண்டு போனது.",
+      "எருமைகளுக்கு புல் இல்லை.",
+      "மூத்தவர் ஒரு புதிய மலையை கனவில் கண்டார்.",
+      "அவர் எருமைகளை அந்த மலைக்கு கூட்டிச்சென்றார்.",
+      "அதிலிருந்து மோட் பண்டிகை கொண்டாடப்படுகிறது.",
+    ],
+    englishLines: [
+      "One year the forest dried up.",
+      "There was no grass for the buffaloes.",
+      "An elder saw a new mountain in a dream.",
+      "He led the buffaloes to that mountain.",
+      "From then on the Modh festival has been celebrated.",
+    ],
+    pronunciationLines: [
+      "Oru varudam kaadu varandu ponadhu.",
+      "Erumaikalukku pul illai.",
+      "Mootthavar oru pudhiya malaiyai kanavil kandaar.",
+      "Avar erumaikalai andha malaikku koottichendraar.",
+      "Adhiliriundhu Modh pandigai kondaadappadugiradhu.",
+    ],
+  },
+];
+
 // Build final stories with 50 lines each
 export const stories: Record<string, Story[]> = {
   santhali: santhaliRaw.map(s => makeLongStory(s)),
   gondi: gondiRaw.map(s => makeLongStory(s)),
   kurukh: kurukhRaw.map(s => makeLongStory(s)),
+  toda: todaRaw.map(s => makeLongStory(s)),
 };

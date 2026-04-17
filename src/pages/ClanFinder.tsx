@@ -7,10 +7,11 @@ import { ritualQuestions, clans, ClanInfo } from "@/data/clanData";
 import { useLearnedItems } from "@/hooks/useLearnedItems";
 import { categories } from "@/data/languages";
 import { allWords } from "@/data/allWords";
-import { santhaliSentences, gondiSentences, kurukhSentences } from "@/data/sentences";
-import { santhaliAlphabets, gondiAlphabets, kurukhAlphabets } from "@/data/alphabets";
+import { santhaliSentences, gondiSentences, kurukhSentences, todaSentences } from "@/data/sentences";
+import { santhaliAlphabets, gondiAlphabets, kurukhAlphabets, todaAlphabets } from "@/data/alphabets";
 import { playScrollSound, playUnlockSound, playFireSound, playTapSound } from "@/utils/soundEffects";
 import tribalVillageImg from "@/assets/tribal-village.jpg";
+import ScrollUnfurl from "@/components/ScrollUnfurl";
 
 type Phase = "intro" | "quiz" | "revealing" | "revealed" | "dashboard";
 
@@ -18,18 +19,20 @@ const sentenceCounts: Record<string, number> = {
   santhali: santhaliSentences.length,
   gondi: gondiSentences.length,
   kurukh: kurukhSentences.length,
+  toda: todaSentences.length,
 };
 const alphabetCounts: Record<string, number> = {
   santhali: santhaliAlphabets.length,
   gondi: gondiAlphabets.length,
   kurukh: kurukhAlphabets.length,
+  toda: todaAlphabets.length,
 };
 
 const ClanFinder = () => {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("intro");
   const [currentQ, setCurrentQ] = useState(0);
-  const [scores, setScores] = useState<Record<string, number>>({ santhali: 0, gondi: 0, kurukh: 0 });
+  const [scores, setScores] = useState<Record<string, number>>({ santhali: 0, gondi: 0, kurukh: 0, toda: 0 });
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [assignedClan, setAssignedClan] = useState<ClanInfo | null>(null);
   const [revealStep, setRevealStep] = useState(0);
@@ -92,7 +95,7 @@ const ClanFinder = () => {
     setAssignedClan(null);
     setPhase("intro");
     setCurrentQ(0);
-    setScores({ santhali: 0, gondi: 0, kurukh: 0 });
+    setScores({ santhali: 0, gondi: 0, kurukh: 0, toda: 0 });
     setRevealStep(0);
     setPrevUnlocks({});
   };
@@ -159,7 +162,7 @@ const ClanFinder = () => {
   const fogOpacity = Math.max(0, 1 - progressData.percent / 100);
 
   return (
-    <div className="min-h-screen pb-24 overflow-hidden relative" style={{ background: "#080f0a" }}>
+    <div className="min-h-screen pb-24 overflow-hidden relative" style={{ background: "linear-gradient(180deg, #1a2530 0%, #0f1820 50%, #0a1015 100%)" }}>
       <MilestoneAnimation
         show={milestoneAnim.show}
         type={milestoneAnim.type}
@@ -281,46 +284,22 @@ const ClanFinder = () => {
         </div>
       )}
 
-      {/* REVEALING PHASE — Scroll unfurl animation */}
+      {/* REVEALING PHASE — Parchment scroll unfurls */}
       {phase === "revealing" && assignedClan && (
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6">
-          {/* Ambient glow */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-64 h-64 rounded-full" style={{
-              background: `radial-gradient(circle, ${assignedClan.color}33, transparent 70%)`,
-              animation: "glowPulse 2s ease-in-out infinite",
-            }} />
+        <ScrollUnfurl show={true} accentColor={assignedClan.accentColor} onComplete={() => setPhase("revealed")}>
+          <div className="text-center space-y-3">
+            <p className="font-body text-[11px] tracking-[0.3em] uppercase" style={{ color: "#6b4226" }}>
+              The spirits have spoken
+            </p>
+            <div className="text-5xl">{assignedClan.spiritAnimalEmoji}</div>
+            <h1 className="font-heading text-2xl font-bold" style={{ color: "#3a2415" }}>
+              {assignedClan.name}
+            </h1>
+            <p className="font-body text-xs italic" style={{ color: "#6b4226" }}>
+              "{assignedClan.motto}"
+            </p>
           </div>
-          <div className="text-center space-y-6 relative z-10">
-            {revealStep >= 1 && (
-              <div className="animate-fade-in-up">
-                <p className="font-body text-sm tracking-widest uppercase" style={{ color: "#22c55e66" }}>
-                  The spirits have spoken...
-                </p>
-                {/* Scroll unfurl decoration */}
-                <div className="mt-4 mx-auto w-48 h-1 rounded-full overflow-hidden" style={{ background: "#1a2e1f" }}>
-                  <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${revealStep * 25}%`, background: assignedClan.accentColor }} />
-                </div>
-              </div>
-            )}
-            {revealStep >= 2 && (
-              <div className="w-32 h-32 mx-auto rounded-full flex items-center justify-center text-6xl animate-fade-in-up"
-                style={{ background: `radial-gradient(circle, ${assignedClan.color}66, transparent)`, boxShadow: `0 0 80px ${assignedClan.color}44` }}>
-                {assignedClan.spiritAnimalEmoji}
-              </div>
-            )}
-            {revealStep >= 3 && (
-              <h1 className="font-heading text-3xl tracking-wide animate-fade-in-up" style={{ color: assignedClan.accentColor }}>
-                {assignedClan.name}
-              </h1>
-            )}
-            {revealStep >= 4 && (
-              <p className="font-body text-sm italic animate-fade-in-up" style={{ color: `${assignedClan.accentColor}99` }}>
-                "{assignedClan.motto}"
-              </p>
-            )}
-          </div>
-        </div>
+        </ScrollUnfurl>
       )}
 
       {/* REVEALED PHASE — Identity Card */}
@@ -384,23 +363,23 @@ const ClanFinder = () => {
                 rgba(8,15,10,${fogOpacity * 0.9}) 100%)`,
             }} />
 
-            {/* Animated fog wisps */}
-            {fogOpacity > 0.1 && [...Array(5)].map((_, i) => (
+            {/* Animated mist wisps — subtle */}
+            {fogOpacity > 0.05 && [...Array(6)].map((_, i) => (
               <div key={i} className="absolute w-full animate-fog-drift pointer-events-none" style={{
-                height: "60px",
-                top: `${10 + i * 18}%`,
-                background: `radial-gradient(ellipse at center, rgba(180,200,190,${fogOpacity * 0.12}), transparent 60%)`,
-                animationDelay: `${i * 2.5}s`,
-                animationDuration: `${10 + i * 3}s`,
+                height: "70px",
+                top: `${5 + i * 16}%`,
+                background: `radial-gradient(ellipse at center, rgba(200,215,225,${fogOpacity * 0.18}), transparent 65%)`,
+                animationDelay: `${i * 2.2}s`,
+                animationDuration: `${11 + i * 2.5}s`,
               }} />
             ))}
 
-            {/* Fireflies on revealed areas */}
-            {progressData.percent > 5 && [...Array(10)].map((_, i) => (
+            {/* Fireflies on revealed areas — soft */}
+            {progressData.percent > 5 && [...Array(8)].map((_, i) => (
               <div key={i} className="absolute rounded-full animate-glow-pulse pointer-events-none"
                 style={{
                   width: "3px", height: "3px",
-                  background: "#7dffb3",
+                  background: "#cfe9d2",
                   left: `${15 + Math.random() * 70}%`,
                   top: `${20 + Math.random() * 60}%`,
                   animationDelay: `${Math.random() * 4}s`,
@@ -410,45 +389,35 @@ const ClanFinder = () => {
               />
             ))}
 
-            {/* Interactive village elements overlaid on the image */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              {/* Central bonfire — always visible */}
-              <button
-                onClick={() => { navigate(`/learn/${assignedClan.languageId}`); playFireSound(); }}
-                className="absolute text-3xl transition-transform hover:scale-125 active:scale-95"
-                style={{ top: "45%", left: "50%", transform: "translate(-50%,-50%)", filter: `opacity(${Math.max(0.3, 1 - fogOpacity * 0.5)})` }}
-                title="Learn"
-              >
-                🔥
-              </button>
-
-              {/* Village elements unlocked by progress */}
+            {/* Invisible interactive hotspots over the village image — no emoji clutter */}
+            <div className="absolute inset-0">
               {[
-                { emoji: "🏠", label: "Clan House", top: "65%", left: "25%", unlocked: houseUnlocked, action: () => navigate(`/learn/${assignedClan.languageId}`) },
-                { emoji: "⚔️", label: "Quests", top: "30%", left: "72%", unlocked: questsUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
-                { emoji: "🏺", label: "Clan War", top: "20%", left: "28%", unlocked: warUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
-                { emoji: "👁️", label: "Elder", top: "12%", left: "50%", unlocked: elderUnlocked, action: () => navigate("/elder") },
-                { emoji: "📜", label: "Scrolls", top: "72%", left: "70%", unlocked: houseUnlocked, action: () => navigate(`/folkvault/${assignedClan.languageId}`) },
-                { emoji: "🗿", label: "Stones", top: "55%", left: "18%", unlocked: progressData.percent >= 20, action: () => navigate(`/history/${assignedClan.languageId}`) },
+                { label: "Clan House", top: "62%", left: "30%", unlocked: houseUnlocked, action: () => navigate(`/learn/${assignedClan.languageId}`) },
+                { label: "Bonfire", top: "48%", left: "52%", unlocked: houseUnlocked, action: () => { navigate(`/learn/${assignedClan.languageId}`); playFireSound(); } },
+                { label: "Quests", top: "32%", left: "70%", unlocked: questsUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
+                { label: "Clan War", top: "22%", left: "30%", unlocked: warUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
+                { label: "Elder", top: "14%", left: "52%", unlocked: elderUnlocked, action: () => navigate("/elder") },
+                { label: "Scrolls", top: "70%", left: "70%", unlocked: houseUnlocked, action: () => navigate(`/folkvault/${assignedClan.languageId}`) },
+                { label: "Stones", top: "55%", left: "18%", unlocked: progressData.percent >= 20, action: () => navigate(`/history/${assignedClan.languageId}`) },
               ].map((el, i) => (
                 <button
                   key={i}
                   onClick={() => { if (el.unlocked) { playTapSound(); el.action(); } }}
-                  className={`absolute text-2xl transition-all duration-300 ${el.unlocked ? "hover:scale-125 active:scale-95" : "grayscale opacity-20"}`}
+                  className={`absolute rounded-full transition-all ${el.unlocked ? "active:scale-90" : ""}`}
                   style={{
                     top: el.top, left: el.left,
                     transform: "translate(-50%,-50%)",
-                    filter: el.unlocked ? `drop-shadow(0 0 8px rgba(74,222,128,0.4))` : "none",
+                    width: 44, height: 44,
+                    background: el.unlocked
+                      ? `radial-gradient(circle, ${assignedClan.color}55, transparent 70%)`
+                      : "transparent",
+                    border: el.unlocked ? `1px solid ${assignedClan.accentColor}66` : "1px dashed rgba(180,200,210,0.15)",
+                    boxShadow: el.unlocked ? `0 0 16px ${assignedClan.accentColor}44` : "none",
                   }}
                   disabled={!el.unlocked}
                   title={el.unlocked ? el.label : `${el.label} (Locked)`}
                 >
-                  {el.emoji}
-                  <span className="block text-[8px] font-body font-semibold mt-0.5"
-                    style={{ color: el.unlocked ? "#d1fae5" : "#1a2e1f" }}>
-                    {el.label}
-                  </span>
-                  {!el.unlocked && <Lock className="w-3 h-3 mx-auto mt-0.5" style={{ color: "#1a3a22" }} />}
+                  {!el.unlocked && <Lock className="w-3 h-3 mx-auto" style={{ color: "rgba(200,215,225,0.4)" }} />}
                 </button>
               ))}
             </div>

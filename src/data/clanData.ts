@@ -88,6 +88,30 @@ export const clans: Record<string, ClanInfo> = {
       "Their harvest festival 'Sarhul' celebrates the marriage of earth and sky",
     ],
   },
+  toda: {
+    id: "toda",
+    name: "Clan of the Mist Buffalo",
+    language: "Toda",
+    languageId: "toda",
+    territory: "Nilgiri Hills, Tamil Nadu",
+    spiritAnimal: "Buffalo",
+    spiritAnimalEmoji: "🐃",
+    color: "#4a6b7c",
+    accentColor: "#b8d4e0",
+    crestSymbol: "☾",
+    motto: "From the misted hills, the milk flows pure",
+    description: "The Toda clan walks the high meadows of the Nilgiris where buffalo and goddess are one. They are keepers of the dairy temple, weavers of the Pukhoor shawl, and singers of mountain hymns.",
+    starterWords: [
+      { word: "வணக்கம்", pronunciation: "Vanakkam", meaning: "Hello / Greetings" },
+      { word: "எரு", pronunciation: "Eru", meaning: "Buffalo" },
+      { word: "மலை", pronunciation: "Malai", meaning: "Mountain" },
+    ],
+    facts: [
+      "Toda is a divergent Dravidian language with no native script",
+      "The Toda population is around 1,600, making them one of India's smallest tribes",
+      "Their Pukhoor embroidery has a Geographical Indication (GI) tag",
+    ],
+  },
 };
 
 export interface QuizQuestion {
@@ -99,46 +123,46 @@ export const ritualQuestions: QuizQuestion[] = [
   {
     question: "The forest speaks to you. What do you hear first?",
     options: [
-      { text: "River song", scores: { santhali: 3, gondi: 1, kurukh: 2 } },
-      { text: "Wind in trees", scores: { santhali: 1, gondi: 2, kurukh: 3 } },
-      { text: "Drums from a distant hill", scores: { santhali: 1, gondi: 3, kurukh: 2 } },
-      { text: "Silence and stone", scores: { santhali: 3, gondi: 2, kurukh: 1 } },
+      { text: "River song", scores: { santhali: 3, gondi: 1, kurukh: 2, toda: 1 } },
+      { text: "Wind in misted hills", scores: { santhali: 1, gondi: 1, kurukh: 2, toda: 3 } },
+      { text: "Drums from a distant hill", scores: { santhali: 1, gondi: 3, kurukh: 2, toda: 1 } },
+      { text: "Silence and stone", scores: { santhali: 3, gondi: 2, kurukh: 1, toda: 2 } },
     ],
   },
   {
     question: "A stranger enters your village. What is your first instinct?",
     options: [
-      { text: "Offer food", scores: { santhali: 3, gondi: 2, kurukh: 1 } },
-      { text: "Study them carefully", scores: { santhali: 1, gondi: 2, kurukh: 3 } },
-      { text: "Challenge them to a game", scores: { santhali: 2, gondi: 3, kurukh: 1 } },
-      { text: "Sing a welcome", scores: { santhali: 2, gondi: 1, kurukh: 3 } },
+      { text: "Offer food", scores: { santhali: 3, gondi: 2, kurukh: 1, toda: 2 } },
+      { text: "Study them carefully", scores: { santhali: 1, gondi: 2, kurukh: 3, toda: 2 } },
+      { text: "Challenge them to a game", scores: { santhali: 2, gondi: 3, kurukh: 1, toda: 1 } },
+      { text: "Sing a welcome", scores: { santhali: 2, gondi: 1, kurukh: 2, toda: 3 } },
     ],
   },
   {
     question: "Your spirit guide appears. It is a —",
     options: [
-      { text: "🐅 Tiger", scores: { santhali: 1, gondi: 3, kurukh: 2 } },
-      { text: "🦅 Eagle", scores: { santhali: 1, gondi: 2, kurukh: 3 } },
-      { text: "🐍 Serpent", scores: { santhali: 2, gondi: 3, kurukh: 1 } },
-      { text: "🦌 Deer", scores: { santhali: 3, gondi: 1, kurukh: 2 } },
+      { text: "🐅 Tiger", scores: { santhali: 1, gondi: 3, kurukh: 2, toda: 1 } },
+      { text: "🦅 Eagle", scores: { santhali: 1, gondi: 2, kurukh: 3, toda: 1 } },
+      { text: "🐃 Buffalo", scores: { santhali: 2, gondi: 1, kurukh: 1, toda: 3 } },
+      { text: "🦌 Deer", scores: { santhali: 3, gondi: 1, kurukh: 2, toda: 2 } },
     ],
   },
   {
     question: "You must learn something new. How do you begin?",
     options: [
-      { text: "By watching elders", scores: { santhali: 3, gondi: 2, kurukh: 1 } },
-      { text: "By doing it myself", scores: { santhali: 1, gondi: 3, kurukh: 2 } },
-      { text: "By listening to songs", scores: { santhali: 2, gondi: 1, kurukh: 3 } },
-      { text: "By reading marks on stone", scores: { santhali: 2, gondi: 2, kurukh: 3 } },
+      { text: "By watching elders", scores: { santhali: 3, gondi: 2, kurukh: 1, toda: 2 } },
+      { text: "By doing it myself", scores: { santhali: 1, gondi: 3, kurukh: 2, toda: 1 } },
+      { text: "By listening to songs", scores: { santhali: 2, gondi: 1, kurukh: 2, toda: 3 } },
+      { text: "By reading marks on stone", scores: { santhali: 2, gondi: 2, kurukh: 3, toda: 1 } },
     ],
   },
   {
     question: "What does your heart guard most fiercely?",
     options: [
-      { text: "Memory", scores: { santhali: 3, gondi: 1, kurukh: 2 } },
-      { text: "Family", scores: { santhali: 2, gondi: 3, kurukh: 2 } },
-      { text: "Land", scores: { santhali: 1, gondi: 3, kurukh: 2 } },
-      { text: "Story", scores: { santhali: 2, gondi: 1, kurukh: 3 } },
+      { text: "Memory", scores: { santhali: 3, gondi: 1, kurukh: 2, toda: 2 } },
+      { text: "Family", scores: { santhali: 2, gondi: 3, kurukh: 2, toda: 1 } },
+      { text: "The Land & herd", scores: { santhali: 1, gondi: 2, kurukh: 1, toda: 3 } },
+      { text: "Story & song", scores: { santhali: 2, gondi: 1, kurukh: 3, toda: 2 } },
     ],
   },
 ];
