@@ -15,6 +15,7 @@ export interface Language {
   speakers: string;
   description: string;
   emoji: string;
+  locked?: boolean;
 }
 
 export const languages: Language[] = [
@@ -45,6 +46,25 @@ export const languages: Language[] = [
     description: "A Dravidian language spoken by the Oraon people, also known as Oraon.",
     emoji: "🌾",
   },
+  {
+    id: "toda",
+    name: "Toda",
+    nativeName: "தோடா",
+    region: "Nilgiri Hills, Tamil Nadu",
+    speakers: "~1,600 (endangered)",
+    description: "An ancient Dravidian language of the Toda pastoralist people of the Nilgiris.",
+    emoji: "🐃",
+  },
+  {
+    id: "irula",
+    name: "Irula",
+    nativeName: "இருளர்",
+    region: "Tamil Nadu, Kerala, Karnataka",
+    speakers: "~200,000",
+    description: "A Dravidian language of the Irula tribal community. Coming soon.",
+    emoji: "🌙",
+    locked: true,
+  },
 ];
 
 export const categories = [
@@ -65,39 +85,4 @@ export const categories = [
   { id: "festivals", name: "Festivals", icon: "🎉", color: "gold" },
 ];
 
-export const sampleWords: Record<string, Word[]> = {
-  "santhali-animals": [
-    { id: "s1", tribal: "ᱥᱤᱧ", english: "Tiger", pronunciation: "Sing", category: "animals", image: "🐅" },
-    { id: "s2", tribal: "ᱫᱟᱠ", english: "Bird", pronunciation: "Dak", category: "animals", image: "🐦" },
-    { id: "s3", tribal: "ᱜᱟᱭ", english: "Cow", pronunciation: "Gay", category: "animals", image: "🐄" },
-    { id: "s4", tribal: "ᱥᱮᱛᱟ", english: "Dog", pronunciation: "Seta", category: "animals", image: "🐕" },
-    { id: "s5", tribal: "ᱢᱮᱣ", english: "Goat", pronunciation: "Mew", category: "animals", image: "🐐" },
-    { id: "s6", tribal: "ᱵᱤᱞ", english: "Cat", pronunciation: "Bil", category: "animals", image: "🐈" },
-  ],
-  "santhali-food": [
-    { id: "s7", tribal: "ᱡᱚᱢ", english: "Rice", pronunciation: "Jom", category: "food", image: "🍚" },
-    { id: "s8", tribal: "ᱫᱟᱠᱟ", english: "Water", pronunciation: "Daka", category: "food", image: "💧" },
-    { id: "s9", tribal: "ᱡᱤᱞ", english: "Fish", pronunciation: "Jil", category: "food", image: "🐟" },
-  ],
-  "santhali-greetings": [
-    { id: "s10", tribal: "ᱡᱚᱦᱟᱨ", english: "Hello", pronunciation: "Johar", category: "greetings", image: "🙏" },
-    { id: "s11", tribal: "ᱥᱟᱨᱟᱱ", english: "Thank you", pronunciation: "Saran", category: "greetings", image: "🤝" },
-  ],
-  "gondi-animals": [
-    { id: "g1", tribal: "నారి", english: "Tiger", pronunciation: "Naari", category: "animals", image: "🐅" },
-    { id: "g2", tribal: "పిట్ట", english: "Bird", pronunciation: "Pitta", category: "animals", image: "🐦" },
-    { id: "g3", tribal: "మాన్", english: "Cow", pronunciation: "Maan", category: "animals", image: "🐄" },
-    { id: "g4", tribal: "కుక్కూ", english: "Dog", pronunciation: "Kukkoo", category: "animals", image: "🐕" },
-  ],
-  "gondi-greetings": [
-    { id: "g5", tribal: "నమస్కార్", english: "Hello", pronunciation: "Namaskaar", category: "greetings", image: "🙏" },
-  ],
-  "kurukh-animals": [
-    { id: "k1", tribal: "बाघ", english: "Tiger", pronunciation: "Baagh", category: "animals", image: "🐅" },
-    { id: "k2", tribal: "चिड़ी", english: "Bird", pronunciation: "Chidi", category: "animals", image: "🐦" },
-    { id: "k3", tribal: "गऊ", english: "Cow", pronunciation: "Gau", category: "animals", image: "🐄" },
-  ],
-  "kurukh-greetings": [
-    { id: "k4", tribal: "नमस्कार", english: "Hello", pronunciation: "Namaskaar", category: "greetings", image: "🙏" },
-  ],
-};
+export const sampleWords: Record<string, Word[]> = {};
