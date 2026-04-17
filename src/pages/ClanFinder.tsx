@@ -7,10 +7,11 @@ import { ritualQuestions, clans, ClanInfo } from "@/data/clanData";
 import { useLearnedItems } from "@/hooks/useLearnedItems";
 import { categories } from "@/data/languages";
 import { allWords } from "@/data/allWords";
-import { santhaliSentences, gondiSentences, kurukhSentences } from "@/data/sentences";
-import { santhaliAlphabets, gondiAlphabets, kurukhAlphabets } from "@/data/alphabets";
+import { santhaliSentences, gondiSentences, kurukhSentences, todaSentences } from "@/data/sentences";
+import { santhaliAlphabets, gondiAlphabets, kurukhAlphabets, todaAlphabets } from "@/data/alphabets";
 import { playScrollSound, playUnlockSound, playFireSound, playTapSound } from "@/utils/soundEffects";
 import tribalVillageImg from "@/assets/tribal-village.jpg";
+import ScrollUnfurl from "@/components/ScrollUnfurl";
 
 type Phase = "intro" | "quiz" | "revealing" | "revealed" | "dashboard";
 
@@ -18,18 +19,20 @@ const sentenceCounts: Record<string, number> = {
   santhali: santhaliSentences.length,
   gondi: gondiSentences.length,
   kurukh: kurukhSentences.length,
+  toda: todaSentences.length,
 };
 const alphabetCounts: Record<string, number> = {
   santhali: santhaliAlphabets.length,
   gondi: gondiAlphabets.length,
   kurukh: kurukhAlphabets.length,
+  toda: todaAlphabets.length,
 };
 
 const ClanFinder = () => {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("intro");
   const [currentQ, setCurrentQ] = useState(0);
-  const [scores, setScores] = useState<Record<string, number>>({ santhali: 0, gondi: 0, kurukh: 0 });
+  const [scores, setScores] = useState<Record<string, number>>({ santhali: 0, gondi: 0, kurukh: 0, toda: 0 });
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [assignedClan, setAssignedClan] = useState<ClanInfo | null>(null);
   const [revealStep, setRevealStep] = useState(0);
@@ -92,7 +95,7 @@ const ClanFinder = () => {
     setAssignedClan(null);
     setPhase("intro");
     setCurrentQ(0);
-    setScores({ santhali: 0, gondi: 0, kurukh: 0 });
+    setScores({ santhali: 0, gondi: 0, kurukh: 0, toda: 0 });
     setRevealStep(0);
     setPrevUnlocks({});
   };
