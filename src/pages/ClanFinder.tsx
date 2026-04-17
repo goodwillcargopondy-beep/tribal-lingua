@@ -284,46 +284,22 @@ const ClanFinder = () => {
         </div>
       )}
 
-      {/* REVEALING PHASE — Scroll unfurl animation */}
+      {/* REVEALING PHASE — Parchment scroll unfurls */}
       {phase === "revealing" && assignedClan && (
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6">
-          {/* Ambient glow */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-64 h-64 rounded-full" style={{
-              background: `radial-gradient(circle, ${assignedClan.color}33, transparent 70%)`,
-              animation: "glowPulse 2s ease-in-out infinite",
-            }} />
+        <ScrollUnfurl show={true} accentColor={assignedClan.accentColor} onComplete={() => setPhase("revealed")}>
+          <div className="text-center space-y-3">
+            <p className="font-body text-[11px] tracking-[0.3em] uppercase" style={{ color: "#6b4226" }}>
+              The spirits have spoken
+            </p>
+            <div className="text-5xl">{assignedClan.spiritAnimalEmoji}</div>
+            <h1 className="font-heading text-2xl font-bold" style={{ color: "#3a2415" }}>
+              {assignedClan.name}
+            </h1>
+            <p className="font-body text-xs italic" style={{ color: "#6b4226" }}>
+              "{assignedClan.motto}"
+            </p>
           </div>
-          <div className="text-center space-y-6 relative z-10">
-            {revealStep >= 1 && (
-              <div className="animate-fade-in-up">
-                <p className="font-body text-sm tracking-widest uppercase" style={{ color: "#22c55e66" }}>
-                  The spirits have spoken...
-                </p>
-                {/* Scroll unfurl decoration */}
-                <div className="mt-4 mx-auto w-48 h-1 rounded-full overflow-hidden" style={{ background: "#1a2e1f" }}>
-                  <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${revealStep * 25}%`, background: assignedClan.accentColor }} />
-                </div>
-              </div>
-            )}
-            {revealStep >= 2 && (
-              <div className="w-32 h-32 mx-auto rounded-full flex items-center justify-center text-6xl animate-fade-in-up"
-                style={{ background: `radial-gradient(circle, ${assignedClan.color}66, transparent)`, boxShadow: `0 0 80px ${assignedClan.color}44` }}>
-                {assignedClan.spiritAnimalEmoji}
-              </div>
-            )}
-            {revealStep >= 3 && (
-              <h1 className="font-heading text-3xl tracking-wide animate-fade-in-up" style={{ color: assignedClan.accentColor }}>
-                {assignedClan.name}
-              </h1>
-            )}
-            {revealStep >= 4 && (
-              <p className="font-body text-sm italic animate-fade-in-up" style={{ color: `${assignedClan.accentColor}99` }}>
-                "{assignedClan.motto}"
-              </p>
-            )}
-          </div>
-        </div>
+        </ScrollUnfurl>
       )}
 
       {/* REVEALED PHASE — Identity Card */}
