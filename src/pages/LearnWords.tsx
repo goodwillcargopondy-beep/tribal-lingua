@@ -1,10 +1,11 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Volume2, CheckCircle2 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import MilestoneAnimation from "@/components/MilestoneAnimation";
 import { languages, categories } from "@/data/languages";
 import { allWords } from "@/data/allWords";
 import { useLearnedItems } from "@/hooks/useLearnedItems";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 
 const LearnWords = () => {
   const { language, category } = useParams<{ language: string; category?: string }>();
@@ -13,6 +14,8 @@ const LearnWords = () => {
   const cat = category ? categories.find((c) => c.id === category) : null;
   const { isLearned, toggleLearned } = useLearnedItems();
   const lastTapRef = useRef<Record<string, number>>({});
+  const [anim, setAnim] = useState<{ show: boolean; type: "category_complete"; message?: string }>({ show: false, type: "category_complete" });
+  const wasCompleteRef = useRef(false);
 
   const langWords = allWords[language || ""] || {};
   const words = langWords[category || "animals"] || [];
@@ -36,6 +39,14 @@ const LearnWords = () => {
   };
 
   const learnedInCategory = words.filter(w => isLearned(`${language}-word-${w.id}`)).length;
+
+  useEffect(() => {
+    if (words.length > 0 && learnedInCategory === words.length && !wasCompleteRef.current) {
+      wasCompleteRef.current = true;
+      setAnim({ show: true, type: "category_complete", message: `${cat?.name || "Category"} mastered!` });
+    }
+    if (learnedInCategory < words.length) wasCompleteRef.current = false;
+  }, [learnedInCategory, words.length, cat?.name]);
 
   return (
     <div className="min-h-screen pb-24 tribal-pattern-bg">
@@ -113,6 +124,7 @@ const LearnWords = () => {
       </main>
 
       <BottomNav />
+      <MilestoneAnimation show={anim.show} type={anim.type} message={anim.message} onComplete={() => setAnim({ ...anim, show: false })} />
     </div>
   );
 };

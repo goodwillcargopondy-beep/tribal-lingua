@@ -40,7 +40,7 @@ const MilestoneAnimation = ({ show, type, message, onComplete }: Props) => {
     story_complete: { emoji: "📜", title: "Story Finished!", color: "#ec4899", particles: "📖🌙🕯️✨" },
     category_complete: { emoji: "🌳", title: "Category Mastered!", color: "#22c55e", particles: "🌿🍃🌱🌲✨", useGuard: true },
     phrase_complete: { emoji: "💬", title: "Phrase Learned!", color: "#06b6d4", particles: "💧✨🌊🌿" },
-    streak_kept: { emoji: "🔥", title: message || "Streak Kept Alive!", color: "#fb923c", particles: "🔥⚡🌟✨🪵" },
+    streak_kept: { emoji: "🔥", title: message || "Streak Kept Alive!", color: "#fb923c", particles: "🔥⚡🌟✨🪵", useGuard: true },
     streak_lost: { emoji: "💧", title: message || "Streak Broken", color: "#64748b", particles: "💧🌧️🍂", sad: true },
     low_score: { emoji: "🌧️", title: message || "Try Again, Brave One", color: "#475569", particles: "🌧️💧🍂", sad: true },
   };

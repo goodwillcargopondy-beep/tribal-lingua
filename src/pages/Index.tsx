@@ -16,7 +16,7 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-body text-sm opacity-80">Welcome back 👋</p>
-              <h1 className="font-heading text-2xl font-bold">Tribal Lingua</h1>
+              <h1 className="font-heading text-2xl font-bold">Trivo</h1>
             </div>
             {!user && (
               <button
