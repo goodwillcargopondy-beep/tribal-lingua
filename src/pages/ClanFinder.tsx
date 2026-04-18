@@ -11,7 +11,6 @@ import { santhaliSentences, gondiSentences, kurukhSentences, todaSentences } fro
 import { santhaliAlphabets, gondiAlphabets, kurukhAlphabets, todaAlphabets } from "@/data/alphabets";
 import { playScrollSound, playUnlockSound, playFireSound, playTapSound } from "@/utils/soundEffects";
 import tribalVillageImg from "@/assets/tribal-village.jpg";
-import ScrollUnfurl from "@/components/ScrollUnfurl";
 
 type Phase = "intro" | "quiz" | "revealing" | "revealed" | "dashboard";
 
@@ -162,7 +161,7 @@ const ClanFinder = () => {
   const fogOpacity = Math.max(0, 1 - progressData.percent / 100);
 
   return (
-    <div className="min-h-screen pb-24 overflow-hidden relative" style={{ background: "linear-gradient(180deg, #1a2530 0%, #0f1820 50%, #0a1015 100%)" }}>
+    <div className="min-h-screen pb-24 overflow-hidden relative" style={{ background: "linear-gradient(180deg, #5a6b7a 0%, #455565 35%, #344452 70%, #2a3845 100%)" }}>
       <MilestoneAnimation
         show={milestoneAnim.show}
         type={milestoneAnim.type}
@@ -284,22 +283,22 @@ const ClanFinder = () => {
         </div>
       )}
 
-      {/* REVEALING PHASE — Parchment scroll unfurls */}
+      {/* REVEALING PHASE — simple mountain mist reveal */}
       {phase === "revealing" && assignedClan && (
-        <ScrollUnfurl show={true} accentColor={assignedClan.accentColor} onComplete={() => setPhase("revealed")}>
-          <div className="text-center space-y-3">
-            <p className="font-body text-[11px] tracking-[0.3em] uppercase" style={{ color: "#6b4226" }}>
-              The spirits have spoken
+        <div className="fixed inset-0 z-[110] flex items-center justify-center" style={{ background: "rgba(20,30,40,0.92)", backdropFilter: "blur(8px)" }}>
+          <div className="text-center space-y-4 animate-fade-in-up px-6">
+            <p className="font-body text-[11px] tracking-[0.3em] uppercase" style={{ color: assignedClan.accentColor }}>
+              The mountain spirits have spoken
             </p>
-            <div className="text-5xl">{assignedClan.spiritAnimalEmoji}</div>
-            <h1 className="font-heading text-2xl font-bold" style={{ color: "#3a2415" }}>
+            <div className="text-6xl animate-float">{assignedClan.spiritAnimalEmoji}</div>
+            <h1 className="font-heading text-3xl font-bold" style={{ color: assignedClan.accentColor, textShadow: `0 0 30px ${assignedClan.color}` }}>
               {assignedClan.name}
             </h1>
-            <p className="font-body text-xs italic" style={{ color: "#6b4226" }}>
+            <p className="font-body text-sm italic max-w-xs mx-auto" style={{ color: "#cbd5e1" }}>
               "{assignedClan.motto}"
             </p>
           </div>
-        </ScrollUnfurl>
+        </div>
       )}
 
       {/* REVEALED PHASE — Identity Card */}
@@ -389,38 +388,7 @@ const ClanFinder = () => {
               />
             ))}
 
-            {/* Invisible interactive hotspots over the village image — no emoji clutter */}
-            <div className="absolute inset-0">
-              {[
-                { label: "Clan House", top: "62%", left: "30%", unlocked: houseUnlocked, action: () => navigate(`/learn/${assignedClan.languageId}`) },
-                { label: "Bonfire", top: "48%", left: "52%", unlocked: houseUnlocked, action: () => { navigate(`/learn/${assignedClan.languageId}`); playFireSound(); } },
-                { label: "Quests", top: "32%", left: "70%", unlocked: questsUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
-                { label: "Clan War", top: "22%", left: "30%", unlocked: warUnlocked, action: () => navigate(`/quiz/${assignedClan.languageId}`) },
-                { label: "Elder", top: "14%", left: "52%", unlocked: elderUnlocked, action: () => navigate("/elder") },
-                { label: "Scrolls", top: "70%", left: "70%", unlocked: houseUnlocked, action: () => navigate(`/folkvault/${assignedClan.languageId}`) },
-                { label: "Stones", top: "55%", left: "18%", unlocked: progressData.percent >= 20, action: () => navigate(`/history/${assignedClan.languageId}`) },
-              ].map((el, i) => (
-                <button
-                  key={i}
-                  onClick={() => { if (el.unlocked) { playTapSound(); el.action(); } }}
-                  className={`absolute rounded-full transition-all ${el.unlocked ? "active:scale-90" : ""}`}
-                  style={{
-                    top: el.top, left: el.left,
-                    transform: "translate(-50%,-50%)",
-                    width: 44, height: 44,
-                    background: el.unlocked
-                      ? `radial-gradient(circle, ${assignedClan.color}55, transparent 70%)`
-                      : "transparent",
-                    border: el.unlocked ? `1px solid ${assignedClan.accentColor}66` : "1px dashed rgba(180,200,210,0.15)",
-                    boxShadow: el.unlocked ? `0 0 16px ${assignedClan.accentColor}44` : "none",
-                  }}
-                  disabled={!el.unlocked}
-                  title={el.unlocked ? el.label : `${el.label} (Locked)`}
-                >
-                  {!el.unlocked && <Lock className="w-3 h-3 mx-auto" style={{ color: "rgba(200,215,225,0.4)" }} />}
-                </button>
-              ))}
-            </div>
+            {/* Image-only — no circle placeholders. Interactions live in action buttons below. */}
 
             {/* Progress badge overlay */}
             <div className="absolute top-4 left-4 right-4 flex items-center gap-3 rounded-xl px-3 py-2"
