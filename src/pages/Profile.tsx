@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import MilestoneAnimation from "@/components/MilestoneAnimation";
 import { Settings, Award, BarChart3, Flame, BookOpen, Star, Trophy, LogOut, LogIn, Target, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,14 +44,64 @@ const Profile = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [weeklyActivity, setWeeklyActivity] = useState<DailyActivity[]>([]);
   const [earnedBadges, setEarnedBadges] = useState<string[]>([]);
+  const [streakAnim, setStreakAnim] = useState<{ show: boolean; type: "streak_kept" | "streak_lost"; message?: string }>({ show: false, type: "streak_kept" });
 
   useEffect(() => {
     if (user) {
       loadProfile();
       loadWeeklyActivity();
       loadAchievements();
+      detectStreak();
     }
   }, [user]);
+
+  const detectStreak = async () => {
+    if (!user) return;
+    const today = new Date().toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    const seenKey = `trivo_streak_seen_${user.id}_${today}`;
+    if (localStorage.getItem(seenKey)) return;
+
+    const { data: prof } = await supabase.from("profiles").select("current_streak, longest_streak, last_activity_date").eq("user_id", user.id).single();
+    if (!prof) return;
+
+    const last = prof.last_activity_date;
+    let newStreak = prof.current_streak || 0;
+    let kept = false;
+
+    if (last === today) {
+      kept = true;
+    } else if (last === yesterday) {
+      newStreak += 1;
+      kept = true;
+    } else if (last && last < yesterday) {
+      // Broken
+      setStreakAnim({ show: true, type: "streak_lost", message: `Streak broken at ${newStreak} days` });
+      newStreak = 1;
+    } else {
+      newStreak = Math.max(newStreak, 1);
+      kept = true;
+    }
+
+    const longest = Math.max(prof.longest_streak || 0, newStreak);
+    await supabase.from("profiles").update({
+      current_streak: newStreak,
+      longest_streak: longest,
+      last_activity_date: today,
+    }).eq("user_id", user.id);
+
+    // Ensure today's daily_activity row exists
+    await supabase.from("daily_activity").upsert(
+      { user_id: user.id, activity_date: today, xp_earned: 0 } as any,
+      { onConflict: "user_id,activity_date", ignoreDuplicates: true } as any
+    );
+
+    if (kept && last !== today) {
+      setStreakAnim({ show: true, type: "streak_kept", message: `${newStreak}-day streak! 🔥` });
+    }
+    localStorage.setItem(seenKey, "1");
+    loadProfile();
+  };
 
   const loadProfile = async () => {
     if (!user) return;
@@ -142,11 +193,10 @@ const Profile = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-4 gap-2 animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
+        <div className="grid grid-cols-3 gap-2 animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
           {[
             { icon: "📝", label: "Words", value: profile?.words_learned || 0 },
             { icon: "🔥", label: "Streak", value: profile?.current_streak || 0 },
-            { icon: "📖", label: "Stories", value: profile?.stories_read || 0 },
             { icon: "🏆", label: "Quizzes", value: profile?.quizzes_completed || 0 },
           ].map((stat) => (
             <div key={stat.label} className="rounded-xl bg-card p-3 text-center card-shadow">
