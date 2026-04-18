@@ -113,6 +113,7 @@ const LearnWords = () => {
       </main>
 
       <BottomNav />
+      <MilestoneAnimation show={anim.show} type={anim.type} message={anim.message} onComplete={() => setAnim({ ...anim, show: false })} />
     </div>
   );
 };
