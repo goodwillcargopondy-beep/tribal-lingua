@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, X, Volume2, RotateCcw, Trophy, Star } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import MilestoneAnimation from "@/components/MilestoneAnimation";
 import { languages } from "@/data/languages";
 import { allWords } from "@/data/allWords";
 import { Word } from "@/data/languages";
@@ -409,6 +410,9 @@ const FillBlanksQuiz = ({ words, questionCount, onComplete }: { words: Word[]; q
 const QuizResults = ({ score, total, xpEarned, onRestart, onBack }: { score: number; total: number; xpEarned: number; onRestart: () => void; onBack: () => void }) => {
   const percentage = Math.round((score / total) * 100);
   const emoji = percentage >= 80 ? "🏆" : percentage >= 60 ? "🌟" : percentage >= 40 ? "💪" : "📚";
+  const [anim, setAnim] = useState({ show: true });
+  const animType: "quiz_complete" | "low_score" = percentage >= 50 ? "quiz_complete" : "low_score";
+  const animMsg = percentage >= 80 ? "Excellent quest!" : percentage >= 50 ? "Quiz complete!" : "Try again, brave one";
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -431,6 +435,7 @@ const QuizResults = ({ score, total, xpEarned, onRestart, onBack }: { score: num
           Back to Quiz
         </button>
       </div>
+      <MilestoneAnimation show={anim.show} type={animType} message={animMsg} onComplete={() => setAnim({ show: false })} />
     </div>
   );
 };
