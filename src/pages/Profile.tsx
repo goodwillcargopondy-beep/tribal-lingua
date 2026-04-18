@@ -227,14 +227,14 @@ const Profile = () => {
             <BarChart3 className="h-5 w-5 text-secondary" />
             <h3 className="font-heading text-base font-semibold text-foreground">Weekly Progress</h3>
           </div>
-          <div className="flex items-end gap-2 h-24">
+          <div className="flex items-end gap-2 h-28">
             {weekData.map((d, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <div className="w-full rounded-t-md bg-muted flex-1 relative" style={{ height: "100%" }}>
-                  <div
-                    className="absolute bottom-0 w-full rounded-t-md bg-secondary transition-all"
-                    style={{ height: `${d.xp ? (d.xp / maxXp) * 100 : 5}%` }}
-                  />
+              <div key={i} className="flex-1 flex flex-col items-center justify-end gap-1 h-full">
+                {d.xp > 0 && (
+                  <span className="text-[9px] font-heading font-bold text-secondary">{d.xp}</span>
+                )}
+                <div className="w-full rounded-t-md bg-muted relative" style={{ height: `${d.xp ? Math.max((d.xp / maxXp) * 100, 8) : 4}%`, minHeight: d.xp ? 8 : 4 }}>
+                  <div className="absolute inset-0 rounded-t-md bg-gradient-to-t from-secondary to-secondary/60 transition-all" />
                 </div>
               </div>
             ))}
@@ -283,6 +283,12 @@ const Profile = () => {
       </main>
 
       <BottomNav />
+      <MilestoneAnimation
+        show={streakAnim.show}
+        type={streakAnim.type}
+        message={streakAnim.message}
+        onComplete={() => setStreakAnim({ ...streakAnim, show: false })}
+      />
     </div>
   );
 };
