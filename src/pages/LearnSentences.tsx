@@ -1,15 +1,17 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Volume2, CheckCircle2 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import MilestoneAnimation from "@/components/MilestoneAnimation";
 import { languages } from "@/data/languages";
-import { santhaliSentences, gondiSentences, kurukhSentences } from "@/data/sentences";
+import { santhaliSentences, gondiSentences, kurukhSentences, todaSentences } from "@/data/sentences";
 import { useLearnedItems } from "@/hooks/useLearnedItems";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 
 const sentenceMap: Record<string, typeof santhaliSentences> = {
   santhali: santhaliSentences,
   gondi: gondiSentences,
   kurukh: kurukhSentences,
+  toda: todaSentences,
 };
 
 const LearnSentences = () => {
@@ -19,6 +21,8 @@ const LearnSentences = () => {
   const sentences = sentenceMap[language || ""] || [];
   const { isLearned, toggleLearned } = useLearnedItems();
   const lastTapRef = useRef<Record<string, number>>({});
+  const [anim, setAnim] = useState<{ show: boolean; type: "phrase_complete"; message?: string }>({ show: false, type: "phrase_complete" });
+  const prevLearnedRef = useRef(0);
 
   const handleSpeak = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -39,6 +43,13 @@ const LearnSentences = () => {
   };
 
   const learnedCount = sentences.filter(s => isLearned(`${language}-sentence-${s.id}`)).length;
+
+  useEffect(() => {
+    if (learnedCount > prevLearnedRef.current && learnedCount > 0) {
+      setAnim({ show: true, type: "phrase_complete", message: `Phrase ${learnedCount} of ${sentences.length}` });
+    }
+    prevLearnedRef.current = learnedCount;
+  }, [learnedCount, sentences.length]);
 
   return (
     <div className="min-h-screen pb-24 tribal-pattern-bg">
